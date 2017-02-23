@@ -11,3 +11,14 @@ def csv_print(mat):
 
 Endpoint = namedtuple('Endpoint', ['id', 'lat', 'con'])
 Request  = namedtuple('Request', ['vid', 'eid', 'n'])
+
+
+def sort_array_with_id(arr):
+    """
+    Sort array ascending and keep track of ids.
+    :param arr: array with values
+    :return: array with tuples (id, val)
+    """
+    tuple_arr = [(id, arr[id]) for id in range(len(arr))]
+    sorted(tuple_arr, key=lambda t: t[1])
+    return tuple_arr
