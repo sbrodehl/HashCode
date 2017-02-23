@@ -16,4 +16,6 @@ parser.add_argument("input", help="input file")
 args = parser.parse_args()
 
 print(args.input)
-read_dataset(args.input)
+n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests = read_dataset(args.input)
+
+1 +1
