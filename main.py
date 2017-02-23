@@ -7,16 +7,13 @@ import pandas as pd
 import argparse
 
 from Utilities import *
+from IO import *
 
 parser = argparse.ArgumentParser()
 
 # need to be
-parser.add_argument("A", help="first matrix")
-parser.add_argument("B", help="second matrix")
-# optional
-parser.add_argument("--output", help="path for diff matrix")
-
+parser.add_argument("input", help="input file")
 args = parser.parse_args()
 
-print(args.A)
-print(args.B)
+print(args.input)
+read_dataset(args.input)
