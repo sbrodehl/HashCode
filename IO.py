@@ -1,7 +1,24 @@
-from Utilities import Endpoint, Request
+from Utilities import *
 
 import numpy as np
 import pandas as pd
+
+
+def write_solution(filepath, cache, videos_on_cache):
+    with open(filepath, 'w') as f:
+        used_caches = 0
+        for s in cache:
+            if s > 0:
+                used_caches += 1
+        # print(used_caches)
+        f.write(str(used_caches))
+        f.write('\n')
+        for idx, c in enumerate(videos_on_cache):
+            if len(c):
+                out = str(idx) + " " + " ".join(str(i) for i in c)
+                # print(out)
+                f.write(out)
+                f.write('\n')
 
 
 def read_dataset(fpath):
