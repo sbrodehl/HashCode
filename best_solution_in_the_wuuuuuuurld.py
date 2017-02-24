@@ -1,6 +1,9 @@
 import numpy as np
 from tqdm import tqdm
 from heapq import *
+from time import gmtime, strftime
+
+from pqdict import minpq
 
 from IO import *
 
@@ -31,24 +34,11 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
     # compute scores
     scores = np.zeros(shape=(n_vid, n_cache), dtype=np.double)
     in_q = np.zeros(shape=(n_vid, n_cache), dtype=np.double)
-    pq = []
+
+    pq = minpq()
 
     c2e = cache_to_endpoint(n_cache, endpoints)
     v2e = vid_to_endpoint(n_vid, n_end, requests)
-
-    v2c = np.zeros(shape=(n_vid, n_cache), dtype=np.double)
-
-    # build v2c
-    for vid in range(n_vid):
-        for cid in range(n_cache):
-            v2c[vid][cid] = s_videos[vid]
-
-    diff_lat = np.zeros(shape=(n_end, n_cache), dtype=np.int)
-
-    # build diff_lat matrix
-    for ep in endpoints:
-        for c in ep.con:
-            diff_lat[ep.id][c[0]] = ep.lat - c[1]
 
     for req in tqdm(requests):
         ep = endpoints[req.eid]
@@ -62,14 +52,17 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
         for c in ep.con:
             if not in_q[req.vid][c[0]]:
                 in_q[req.vid][c[0]] = True
-                heappush(pq, (scores[req.vid][c[0]], req.vid, c[0]))
+                # heappush(pq, (scores[req.vid][c[0]], req.vid, c[0]))
+                index = req.vid * n_cache + c[0]
+                pq[index] = scores[req.vid][c[0]]
 
     print((len(pq))/(n_vid * n_cache), "in Queue.")
 
     # update from here on
     while pq:
-        (s, v, c) = heappop(pq)
-
+        # (s, v, c) = heappop(pq)
+        key, s = pq.popitem()
+        v, c = key // n_cache, key % n_cache
         if cache[c] + s_videos[v] <= s_cache:
             videos_on_cache[c].append(v)
             cache[c] += s_videos[v]
@@ -95,11 +88,15 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
                             scores[v][cc[0]] = 0
 
             # update the pq
-            for i in range(len(pq)):
-                (_, vvvv, cccc) = heappop(pq)
-                heappush(pq, (scores[vvvv][cccc], vvvv, cccc))
+            for (k, ss) in pq.items():
+                vv, cc = k // n_cache, k % n_cache
+                new_score = scores[vv][cc]
+                if ss != new_score:
+                    pq[k] = new_score
+                # (_, vvvv, cccc) = heappop(pq)
+                # heappush(pq, (scores[vvvv][cccc], vvvv, cccc))
 
-        if len(pq) % 10 == 0:
-            write_solution("kittens_" + str(len(pq)), cache, videos_on_cache)
+        if len(pq) % 100000 == 0:
+            write_solution(strftime("%Y%m%d-%H%M%S", gmtime()), cache, videos_on_cache)
 
     return cache, videos_on_cache
