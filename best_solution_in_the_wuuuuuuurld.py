@@ -2,6 +2,8 @@ import numpy as np
 from tqdm import tqdm
 from heapq import *
 
+from IO import *
+
 
 def cache_to_endpoint(n_cache, endpoints):
     res = np.zeros(shape=(n_cache, len(endpoints)), dtype=np.bool)
@@ -28,6 +30,7 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
     videos_on_cache = [[] for _ in range(n_cache)]
     # compute scores
     scores = np.zeros(shape=(n_vid, n_cache), dtype=np.double)
+    in_q = np.zeros(shape=(n_vid, n_cache), dtype=np.double)
     pq = []
 
     c2e = cache_to_endpoint(n_cache, endpoints)
@@ -57,7 +60,9 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
     for req in tqdm(requests):
         ep = endpoints[req.eid]
         for c in ep.con:
-            heappush(pq, (scores[req.vid][c[0]], req.vid, c[0]))
+            if not in_q[req.vid][c[0]]:
+                in_q[req.vid][c[0]] = True
+                heappush(pq, (scores[req.vid][c[0]], req.vid, c[0]))
 
     print((len(pq))/(n_vid * n_cache), "in Queue.")
 
@@ -68,6 +73,8 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
         if cache[c] + s_videos[v] <= s_cache:
             videos_on_cache[c].append(v)
             cache[c] += s_videos[v]
+
+            print(len(pq))
 
             # update scores for connected caches / videos
             # for req in requests:
@@ -92,6 +99,7 @@ def solution(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, request
                 (_, vvvv, cccc) = heappop(pq)
                 heappush(pq, (scores[vvvv][cccc], vvvv, cccc))
 
-        print(len(pq))
+        if len(pq) % 10 == 0:
+            write_solution("kittens_" + str(len(pq)), cache, videos_on_cache)
 
     return cache, videos_on_cache
