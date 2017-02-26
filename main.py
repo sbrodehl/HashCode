@@ -1,6 +1,7 @@
 import argparse
 import time
 
+from Preprocessing import preprocessing
 from best_solution_in_the_wuuuuuuurld import *
 
 parser = argparse.ArgumentParser()
@@ -15,6 +16,8 @@ start = time.time()
 
 n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests = read_dataset(args.input)
 graph = build_graph(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests)
+
+graph2 = preprocessing(graph)
 
 tqdm.write("Setup in {0:.2f}s".format((time.time() - start)))
 
