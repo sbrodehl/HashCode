@@ -23,7 +23,7 @@ def vid_to_endpoint(n_vid, n_end, requests):
     return res
 
 
-def solution(graph, max_iter=3000):
+def solution(graph):
     # solutions
     videos_on_cache = [[] for _ in range(graph['n_caches'])]
     scores = {}
@@ -69,7 +69,6 @@ def solution(graph, max_iter=3000):
     # now we have the heap with the scores
     # print("Size of the heap", len(pq), "/", str(len(graph['videos']) * len(graph['caches'])))
 
-    iters = 0
     # update from here on
     pbar = tqdm(total=len(pq), desc="Progressing Priority Queue")
     while pq:
@@ -79,11 +78,16 @@ def solution(graph, max_iter=3000):
         # push the tuple if score has changed
         if scores[key] > s:
             heappush(pq, (scores[key], v, c))
+            continue
 
         cache_size = np.sum([graph['videos'][vids]['size'] for vids in videos_on_cache[c]])
         if cache_size + graph['videos'][v]['size'] > graph['max_cache_size']:
             # continue if cache is full
             continue
+
+        if v in videos_on_cache[c]:
+            print("ERROR", "Duplicate video index", v, "in", c)
+            break
 
         videos_on_cache[c].append(v)
 
@@ -91,11 +95,12 @@ def solution(graph, max_iter=3000):
         cache = graph['caches'][c]
         for eid in cache['endpoints']:
             ep = graph['endpoints'][eid]
-            for nc in ep['connections']:
+            for ncon in ep['connections']:
+                nc = ncon[0]
                 if nc == c:
                     continue
-                key = ScoreKey(v, nc)
-                if key in scores:
+                other = ScoreKey(v, nc)
+                if other in scores:
 
                     lat_diff = ep['latency']
                     for con in ep['connections']:
@@ -104,19 +109,17 @@ def solution(graph, max_iter=3000):
                             break
 
                     n_requests = 0
-                    for req in graph['videos'][v]['requests']:
+                    for rid in graph['videos'][v]['requests']:
+                        req = graph['requests'][rid]
                         if req.eid == eid:
                             n_requests = req.n
                             break
 
-                    score = scores[key]
+                    score = scores[other]
                     score += n_requests * lat_diff / graph['videos'][v]['size']
-                    scores[key] = score
+                    scores[other] = score
 
         pbar.update(1)
-        iters += 1
-        if iters > max_iter:
-            break
 
     return videos_on_cache
 
