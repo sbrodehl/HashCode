@@ -1,5 +1,3 @@
-import numpy as np
-from tqdm import tqdm
 from heapq import *
 from time import gmtime, strftime, sleep
 
@@ -25,7 +23,7 @@ def vid_to_endpoint(n_vid, n_end, requests):
     return res
 
 
-def solution(graph):
+def solution(graph, max_iter=3000):
     # solutions
     videos_on_cache = [[] for _ in range(graph['n_caches'])]
     scores = {}
@@ -65,16 +63,16 @@ def solution(graph):
         del cache
 
     pq = []
-    for k in scores:
+    for k in tqdm(scores, desc="Filling Priority Queue"):
         heappush(pq, (scores[k], k.video, k.cache))
 
     # now we have the heap with the scores
     # print("Size of the heap", len(pq), "/", str(len(graph['videos']) * len(graph['caches'])))
 
+    iters = 0
     # update from here on
     pbar = tqdm(total=len(pq), desc="Progressing Priority Queue")
     while pq:
-        pbar.update(1)
         (s, v, c) = heappop(pq)
         key = ScoreKey(v, c)
         # check if score has changed
@@ -108,9 +106,13 @@ def solution(graph):
                             break
 
                     score = scores[key]
-                    score -= n_requests * lat_diff / graph['videos'][v]['size']
+                    score += n_requests * lat_diff / graph['videos'][v]['size']
                     scores[key] = score
-                    pass
+
+        pbar.update(1)
+        iters += 1
+        if iters > max_iter:
+            break
 
     return videos_on_cache
 
@@ -142,7 +144,7 @@ def solution_old(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, req
                 in_q[req.vid][c[0]] = True
                 heappush(pq, (scores[req.vid][c[0]], req.vid, c[0]))
 
-    tqdm.write(str(100 * (len(pq))/(n_vid * n_cache)) + "% in Queue.")
+    tqdm.write(str(100 * (len(pq)) / (n_vid * n_cache)) + "% in Queue.")
     sleep(0.1)
     pbar = tqdm(total=len(pq), desc="Progressing Priority Queue")
     # update from here on

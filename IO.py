@@ -1,15 +1,13 @@
 from Utilities import *
 
-import numpy as np
-import pandas as pd
 
+def write_solution(filepath, videos_on_cache):
+    used_caches = 0
+    for cache in videos_on_cache:
+        if len(cache):
+            used_caches += 1
 
-def write_solution(filepath, cache, videos_on_cache):
     with open(filepath, 'w') as f:
-        used_caches = 0
-        for s in cache:
-            if s > 0:
-                used_caches += 1
         # print(used_caches)
         f.write(str(used_caches))
         f.write('\n')
@@ -22,7 +20,6 @@ def write_solution(filepath, cache, videos_on_cache):
 
 
 def read_dataset(fpath):
-
     with open(fpath, 'r') as reader:
         # numbers
         n_vid, n_end, n_req, n_cache, s_cache = [int(i) for i in reader.readline().split(" ")]
@@ -74,17 +71,15 @@ def build_graph(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requ
             'endpoints': []
         }
 
-    for e in tqdm(range(n_end), desc="Caches + Endpoints"):
-        for con in endpoints[e].con:
-            graph['caches'][con[0]]['endpoints'].append(e)
-
     # insert endpoints with corresponding requests
-    for e in tqdm(range(n_end), desc="Endpoints"):
+    for e in tqdm(range(n_end), desc="Caches + Endpoints"):
         graph['endpoints'][e] = {
             'latency': endpoints[e].lat,
             'connections': endpoints[e].con,
             'requests': []
         }
+        for con in endpoints[e].con:
+            graph['caches'][con[0]]['endpoints'].append(e)
 
     # insert videos with corresponding requests
     for v in tqdm(range(n_vid), desc="Videos"):
