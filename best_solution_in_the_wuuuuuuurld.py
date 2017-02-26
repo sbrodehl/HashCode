@@ -92,13 +92,17 @@ def solution(graph, max_iter=3000):
         for eid in cache['endpoints']:
             ep = graph['endpoints'][eid]
             for nc in ep['connections']:
+                if nc == c:
+                    continue
                 key = ScoreKey(v, nc)
                 if key in scores:
+
                     lat_diff = ep['latency']
                     for con in ep['connections']:
                         if con[0] == nc:
                             lat_diff -= con[1]
                             break
+
                     n_requests = 0
                     for req in graph['videos'][v]['requests']:
                         if req.eid == eid:
