@@ -8,13 +8,11 @@ def write_solution(filepath, videos_on_cache):
             used_caches += 1
 
     with open(filepath, 'w') as f:
-        # print(used_caches)
         f.write(str(used_caches))
         f.write('\n')
         for idx, c in enumerate(videos_on_cache):
             if len(c):
                 out = str(idx) + " " + " ".join(str(i) for i in c)
-                # print(out)
                 f.write(out)
                 f.write('\n')
 
