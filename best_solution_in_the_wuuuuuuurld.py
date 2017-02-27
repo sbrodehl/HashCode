@@ -81,6 +81,7 @@ def solution(graph):
             heappush(pq, (scores[key], v, c))
             continue
 
+        pbar.update(1)
         cache_size = np.sum([graph['videos'][vids]['size'] for vids in videos_on_cache[c]])
         if cache_size + graph['videos'][v]['size'] > graph['caches'][c]['size']:
             # continue if cache is full
@@ -119,8 +120,6 @@ def solution(graph):
                     score = scores[other]
                     score += n_requests * lat_diff / graph['videos'][v]['size']
                     scores[other] = score
-
-        pbar.update(1)
 
     return videos_on_cache
 
