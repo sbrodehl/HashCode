@@ -1,8 +1,20 @@
-# HashCode
+# \#HashCode2017 Optimize Cache Servers for YouTube
 
-Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) of our Team _Gyrating Flibbittygibbitts_.
+Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Optimize Cache Servers for YouTube"** of our Team _Gyrating Flibbittygibbitts_.
 
 The problem statement can be found [here](hashcode2017_streaming_videos.pdf).
+The input files can be found in `input/`
+* [Me at the zoo](input/me_at_the_zoo.in)
+* [Videos worth spreading](videos_worth_spreading.in)
+* [Trending today](trending_today.in)
+* [Kittens](kittens.in)
+
+> Have you ever wondered what happens behind the scenes when you watch a YouTube video? 
+> As more and more people watch online videos (and as the size of these videos increases), it is critical that video-serving infrastructure is optimized to handle requests reliably and quickly.
+> This typically involves putting in place cache servers, which store copies of popular videos.
+> When a user request for a particular video arrives, it can be handled by a cache server close to the user, rather than by a remote data center thousands of kilometers away.
+> Given a description of cache servers, network endpoints and videos, along with predicted requests for individual videos, decide which videos to put in which cache server in order to minimize the average waiting time for all requests.
+> _from [Problem statement for Online Qualification Round, Hash Code 2017](https://hashcode.withgoogle.com/past_editions.html)_
 
 
 ## Algorithm
