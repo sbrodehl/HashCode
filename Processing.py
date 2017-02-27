@@ -25,7 +25,7 @@ def preprocessing(graph):
     uniques = [tuple(row) for row in uniques]
     unique_count = len(uniques)
     print("***", "UNIQUES", "***")
-    print(unique_count, "of", cache_count, "=", str(100*unique_count/cache_count) + "%")
+    print(unique_count, "out of", cache_count, "are unique.")
 
     cache_mapping = np.zeros(cache_count, dtype=np.int)
     for i in range(cache_count):
