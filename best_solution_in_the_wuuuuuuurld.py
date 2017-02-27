@@ -24,13 +24,14 @@ def vid_to_endpoint(n_vid, n_end, requests):
 
 
 def solution(graph):
+    caches_count = len(graph['caches'])
     # solutions
-    videos_on_cache = [[] for _ in range(graph['n_caches'])]
+    videos_on_cache = [[] for _ in range(caches_count)]
     scores = {}
 
     ScoreKey = namedtuple('ScoreKey', ['video', 'cache'])
 
-    for cid in tqdm(range(graph['n_caches']), desc="Computing Scores"):
+    for cid in tqdm(range(caches_count), desc="Computing Scores"):
         scores_for_c = {}
         cache = graph['caches'][cid]
         # if there are requests, compute score
@@ -38,7 +39,7 @@ def solution(graph):
             ep = graph['endpoints'][eid]
             lat_diff = ep['latency']
             for con in ep['connections']:
-                if con[0] == cid:
+                if graph['cache_mapping'][con[0]] == cid:
                     lat_diff -= con[1]
                     break
 
@@ -81,7 +82,7 @@ def solution(graph):
             continue
 
         cache_size = np.sum([graph['videos'][vids]['size'] for vids in videos_on_cache[c]])
-        if cache_size + graph['videos'][v]['size'] > graph['max_cache_size']:
+        if cache_size + graph['videos'][v]['size'] > graph['caches'][c]['size']:
             # continue if cache is full
             continue
 
@@ -96,7 +97,7 @@ def solution(graph):
         for eid in cache['endpoints']:
             ep = graph['endpoints'][eid]
             for ncon in ep['connections']:
-                nc = ncon[0]
+                nc = graph['cache_mapping'][ncon[0]]
                 if nc == c:
                     continue
                 other = ScoreKey(v, nc)
@@ -104,7 +105,7 @@ def solution(graph):
 
                     lat_diff = ep['latency']
                     for con in ep['connections']:
-                        if con[0] == nc:
+                        if graph['cache_mapping'][con[0]] == nc:
                             lat_diff -= con[1]
                             break
 

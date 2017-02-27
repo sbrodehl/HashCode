@@ -68,7 +68,8 @@ def build_graph(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requ
     # insert caches with corresponding endpoints
     for c in tqdm(range(n_cache), desc="Caches"):
         graph['caches'][c] = {
-            'endpoints': []
+            'endpoints': [],
+            'size': s_cache
         }
 
     # insert endpoints with corresponding requests
