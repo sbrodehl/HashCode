@@ -44,7 +44,7 @@ def preprocessing(graph):
     return graph, unique_count < cache_count
 
 
-def postprocessing(videos_on_cache, cache_mapping, videos, cache_size, video_sizes):
+def postprocessing(videos_on_cache, cache_mapping, cache_size, video_sizes):
     # greedy unpacking from clusters into caches
     voc_unpacked = [[] for _ in cache_mapping]
 

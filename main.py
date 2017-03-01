@@ -22,7 +22,7 @@ tqdm.write("Overall setup in {0:.2f}s".format((time.time() - start)))
 videos_on_cache = solution(graph2)
 
 if uses_clusters:
-    videos_on_cache = postprocessing(videos_on_cache, graph2['cache_mapping'], graph2['videos'], s_cache, s_videos)
+    videos_on_cache = postprocessing(videos_on_cache, graph2['cache_mapping'], s_cache, s_videos)
 
 write_solution(args.output, videos_on_cache)
 
