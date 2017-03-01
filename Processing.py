@@ -17,16 +17,9 @@ def preprocessing(graph):
         for e in c['endpoints']:
             c_points[i][e] = 1
 
-    # ms = MeanShift().fit(c_points)
-    # print("***", "MEANSHIFT", "***")
-    # print(len(ms.cluster_centers_))
-    # print(ms.labels_)
-
     uniques = unique_rows(c_points)
     uniques = [tuple(row) for row in uniques]
     unique_count = len(uniques)
-    print("***", "UNIQUES", "***")
-    print(unique_count, "out of", cache_count, "are unique.")
 
     cache_mapping = np.zeros(cache_count, dtype=np.int)
     for i in range(cache_count):
@@ -55,7 +48,7 @@ def postprocessing(videos_on_cache, cache_mapping, videos, cache_size, video_siz
     # greedy unpacking from clusters into caches
     voc_unpacked = [[] for _ in cache_mapping]
 
-    # failed clusters
+    # list failed clusters
     failed_clusters = []
 
     # iterate over all cache-clusters
