@@ -84,6 +84,6 @@ def postprocessing(videos_on_cache, cache_mapping, cache_size, video_sizes):
         for k, c___ in enumerate(caches_in_cluster):
             voc_unpacked[c___].extend(unpacked_cluster[k])
 
-    print("Unpacking done, but failed for videos {0}".format(", ".join(failed_clusters)))
+    print("Unpacking done, but failed for videos {0}".format(", ".join(str(i) for i in failed_clusters)))
 
     return voc_unpacked
