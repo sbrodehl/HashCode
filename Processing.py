@@ -1,7 +1,7 @@
 import numpy as np
-from sklearn.cluster import MeanShift
 
 from tqdm import tqdm
+
 
 def unique_rows(a):
     a = np.ascontiguousarray(a)
@@ -55,6 +55,9 @@ def postprocessing(videos_on_cache, cache_mapping, videos, cache_size, video_siz
     # greedy unpacking from clusters into caches
     voc_unpacked = [[] for _ in cache_mapping]
 
+    # failed clusters
+    failed_clusters = []
+
     # iterate over all cache-clusters
     for cluster_idx, cluster_cache in tqdm(enumerate(videos_on_cache), desc="Cluster unpacking"):
         # find all caches in the cluster
@@ -82,11 +85,12 @@ def postprocessing(videos_on_cache, cache_mapping, videos, cache_size, video_siz
                     packed = True
                     break
             if not packed:
-                print("Bin packing failed for video {0}".format(k))
+                failed_clusters.append(k)
 
         # add unpacked caches to result
         for k, c___ in enumerate(caches_in_cluster):
             voc_unpacked[c___].extend(unpacked_cluster[k])
 
-    print("Unpacking done")
+    print("Unpacking done, but failed for videos {0}".format(", ".join(failed_clusters)))
+
     return voc_unpacked

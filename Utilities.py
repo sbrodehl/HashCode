@@ -1,6 +1,5 @@
 import sys
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 from collections import namedtuple
@@ -29,7 +28,7 @@ def compute_solution_score(videos_on_cache, requests, endpoints):
     score = 0.0
     total_req = 0
 
-    for req in requests:
+    for req in tqdm(requests, desc="Computing score"):
         # find caches that are connected to eid and have vid
         _lats = [endpoints[req.eid].lat]
 
