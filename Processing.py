@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.cluster import MeanShift
 
+from tqdm import tqdm
 
 def unique_rows(a):
     a = np.ascontiguousarray(a)
@@ -47,9 +48,45 @@ def preprocessing(graph):
 
     graph['cache_mapping'] = cache_mapping
 
-    return graph
+    return graph, unique_count < cache_count
 
 
-def postprocessing(videos_on_cache, cache_mapping, videos):
-    # split the unique caches
-    return videos_on_cache
+def postprocessing(videos_on_cache, cache_mapping, videos, cache_size, video_sizes):
+    # greedy unpacking from clusters into caches
+    voc_unpacked = [[] for _ in cache_mapping]
+
+    # iterate over all cache-clusters
+    for cluster_idx, cluster_cache in tqdm(enumerate(videos_on_cache), desc="Cluster unpacking"):
+        # find all caches in the cluster
+        caches_in_cluster = []
+        for cache_index, cluster_index in enumerate(cache_mapping):
+            if cluster_index == cluster_idx:
+                caches_in_cluster.append(cache_index)
+
+        # preprocess data
+        video_tuples = []
+        for video_index in cluster_cache:
+            video_tuples.append((video_index, video_sizes[video_index]))
+
+        # sorting is optional, works both ways...
+        # d = sorted(d, key=lambda x: -x[1])
+
+        unpacked_cluster = [[] for _ in range(len(caches_in_cluster))]
+        size_values = [0] * len(caches_in_cluster)
+        for k, video_index in video_tuples:
+            packed = False
+            for j in range(len(size_values)):
+                if size_values[j] + video_index <= cache_size:
+                    unpacked_cluster[j].append(k)
+                    size_values[j] += video_index
+                    packed = True
+                    break
+            if not packed:
+                print("Bin packing failed for video {0}".format(k))
+
+        # add unpacked caches to result
+        for k, c___ in enumerate(caches_in_cluster):
+            voc_unpacked[c___].extend(unpacked_cluster[k])
+
+    print("Unpacking done")
+    return voc_unpacked

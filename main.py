@@ -16,7 +16,7 @@ start = time.time()
 
 n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests = read_dataset(args.input)
 graph = build_graph(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests)
-graph2 = preprocessing(graph)
+graph2, uses_clusters = preprocessing(graph)
 
 tqdm.write("Setup in {0:.2f}s".format((time.time() - start)))
 
@@ -24,7 +24,8 @@ sleep(0.1)
 
 videos_on_cache = solution(graph2)
 
-videos_on_cache = postprocessing(videos_on_cache, graph2['cache_mapping'], graph2['videos'])
+if uses_clusters:
+    videos_on_cache = postprocessing(videos_on_cache, graph2['cache_mapping'], graph2['videos'], s_cache, s_videos)
 
 # write_solution(args.output, videos_on_cache)
 
