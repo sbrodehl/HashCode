@@ -23,7 +23,7 @@ tba.
 
 ## Scores
 
-Overall **2561212** points.
+Overall **2565511** points.
 
 Highest score during the _Online Qualification Round_ was 2651999 (Team _Ababahalamaha_), and 2653781 (Team _Master Exploder_) in the _Extended Round_.
 
@@ -42,7 +42,7 @@ Highest score seen is 610759 [*](http://codeforces.com/blog/entry/50624?#comment
 ![Videos worth spreading](output/Videos_worth_spreading.png)
 
 #### Trending today
-_`495667`_ points, processed in `23.8 seconds`.
+_`499966`_ points, processed in `22.12 seconds`.
 
 Highest score seen is 499991 [*](http://codeforces.com/blog/entry/50624?#comment-345776)
 
