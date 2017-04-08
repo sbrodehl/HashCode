@@ -11,19 +11,19 @@ parser.add_argument("output", help="output file")
 args = parser.parse_args()
 
 # read input file
-settings, m = read_dataset(args.input)
+d = read_dataset(args.input)
 
 # start timing
 start = time.time()
 
 # compute solution
-m = solution(m)
+d = solution(d)
 
 # stop timing
 end = time.time()
 
 # write solution
-write_solution(args.output, m)
+write_solution(args.output, d)
 
-score = compute_solution_score(settings, m)
+score = compute_solution_score(d)
 tqdm.write("Score {0:.0f} in {1:.2f}s".format(score, (end - start)))

@@ -24,8 +24,16 @@ def read_dataset(fpath):
                 else:
                     matrix[line, col] = 1
 
-        return {'H': H, 'W': W, 'R': R, 'Pb': Pb, 'Pr': Pr, 'B': B,
-                'backbone': backbone, 'graph': matrix}
+        return {
+            'height': H,
+            'width': W,
+            'radius': R,
+            'price_backbone': Pb,
+            'price_router': Pr,
+            'budget': B,
+            'backbone': backbone,
+            'graph': matrix
+        }
 
 
 def write_solution(filepath, videos_on_cache):
