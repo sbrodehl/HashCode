@@ -2,5 +2,5 @@ from heapq import *
 from IO import *
 
 
-def solution(graph):
-    return None
+def solution(m):
+    return m

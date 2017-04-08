@@ -9,9 +9,9 @@ def unique_rows(a):
     return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
 
 
-def preprocessing():
-    return None
+def preprocessing(m):
+    return m
 
 
-def postprocessing():
-    return None
+def postprocessing(m):
+    return m
