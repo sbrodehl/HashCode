@@ -27,4 +27,23 @@ def sort_array_with_id(arr):
 def compute_solution_score(d):
     score = 0.0
 
+    # look for cables and routers, find positions and write that stuff
+    cables = []
+    routers = []
+
+    graph = d['graph']
+    for x, row in enumerate(graph):
+        for y, val in enumerate(row):
+            if val == 2:
+                cables.append((x, y))
+            elif val == 3:
+                routers.append((x, y))
+                cables.append((x, y))
+
+    # budget part of scoring
+    score_cost = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_routers'])
+
+    # the other part
+    # todo.
+
     return np.floor(score)
