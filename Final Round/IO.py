@@ -1,5 +1,31 @@
 from Utilities import *
+import numpy as np
 
+
+def read_dataset(fpath):
+    with open(fpath, 'r') as reader:
+        # size of grid
+        H, W, R = [int(i) for i in reader.readline().split(" ")]
+        # cost and budget
+        Pb, Pr, B = [int(i) for i in reader.readline().split(" ")]
+        # backbone position
+        tmp = reader.readline().split(" ")
+        backbone = (int(tmp[0]), int(tmp[1]))
+        # read the matrix
+        matrix = np.zeros((H, W))
+
+        for line in range(H):
+            tmp = reader.readline()
+            for col in range(W):
+                if tmp[col] == '-':
+                    matrix[line, col] = -1
+                elif tmp[col] == '#':
+                    matrix[line, col] = 0
+                else:
+                    matrix[line, col] = 1
+
+        return {'H': H, 'W': W, 'R': R, 'Pb': Pb, 'Pr': Pr, 'B': B,
+                'backbone': backbone, 'graph': matrix}
 
 def write_solution(filepath, videos_on_cache):
     used_caches = 0
@@ -15,37 +41,6 @@ def write_solution(filepath, videos_on_cache):
                 out = str(idx) + " " + " ".join(str(i) for i in c)
                 f.write(out)
                 f.write('\n')
-
-
-def read_dataset(fpath):
-    with open(fpath, 'r') as reader:
-        # numbers
-        n_vid, n_end, n_req, n_cache, s_cache = [int(i) for i in reader.readline().split(" ")]
-
-        # video sizes
-        s_videos = [int(i) for i in reader.readline().split(" ")]
-
-        # endpoints
-        endpoints = []
-        for e in range(n_end):
-            L_D, K = [int(i) for i in reader.readline().split(" ")]
-
-            connections = []
-
-            # iterate over the K connected caches
-            for k in range(K):
-                c, L_C = [int(i) for i in reader.readline().split(" ")]
-                connections.append((c, L_C))
-
-            endpoints.append(Endpoint(e, L_D, connections))
-
-        # requests
-        requests = []
-        for r in range(n_req):
-            R_v, R_e, R_n = [int(i) for i in reader.readline().split(" ")]
-            requests.append(Request(R_v, R_e, R_n))
-
-        return n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests
 
 
 def build_graph(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requests):
@@ -92,3 +87,9 @@ def build_graph(n_vid, n_end, n_req, n_cache, s_cache, s_videos, endpoints, requ
         graph['endpoints'][r.eid]['requests'].append(i)
 
     return graph
+
+
+if __name__ == '__main__':
+    import sys
+    fpath = sys.argv[1]
+    print(read_dataset(fpath))
