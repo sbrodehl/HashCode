@@ -2,12 +2,12 @@
 
 Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Final Round,"** of our Team _Gyrating Flibbittygibbitts_.
 
-The problem statement can be found [here](Final Round/hashcode2017_router_placement.pdf).
+The problem statement can be found [here](Final%20Round/hashcode2017_router_placement.pdf).
 The input files can be found in `input/`
-* [Charleston road](Final Round/input/charleston_road.in)
-* [Let's go higher](Final Round/input/lets_go_higher.in)
-* [Opera](Final Round/input/opera.in)
-* [Rue de Londres](Final Round/input/rue_de_londres.in)
+* [Charleston road](Final%20Round/input/charleston_road.in)
+* [Let's go higher](Final%20Round/input/lets_go_higher.in)
+* [Opera](Final%20Round/input/opera.in)
+* [Rue de Londres](Final%20Round/input/rue_de_londres.in)
 
 > Who doesn't love wireless Internet?
 > Millions of people rely on it for productivity and fun in countless cafes, railway stations and public areas of all sorts.
