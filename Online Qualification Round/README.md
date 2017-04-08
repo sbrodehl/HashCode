@@ -2,12 +2,12 @@
 
 Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Optimize Cache Servers for YouTube"** of our Team _Gyrating Flibbittygibbitts_.
 
-The problem statement can be found [here](Online%20Qualification%20Round/hashcode2017_streaming_videos.pdf).
+The problem statement can be found [here](hashcode2017_streaming_videos.pdf).
 The input files can be found in `input/`
-* [Me at the zoo](Online%20Qualification%20Round/input/me_at_the_zoo.in)
-* [Videos worth spreading](Online%20Qualification%20Round/input/videos_worth_spreading.in)
-* [Trending today](Online%20Qualification%20Round/input/trending_today.in)
-* [Kittens](Online%20Qualification%20Round/input/kittens.in)
+* [Me at the zoo](input/me_at_the_zoo.in)
+* [Videos worth spreading](input/videos_worth_spreading.in)
+* [Trending today](input/trending_today.in)
+* [Kittens](input/kittens.in)
 
 > Have you ever wondered what happens behind the scenes when you watch a YouTube video? 
 > As more and more people watch online videos (and as the size of these videos increases), it is critical that video-serving infrastructure is optimized to handle requests reliably and quickly.
