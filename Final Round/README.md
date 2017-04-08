@@ -1,6 +1,6 @@
 # \#HashCode2017 Final Round - Router placement
 
-Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Final Round,"** of our Team _Gyrating Flibbittygibbitts_.
+Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Router placement"** of our Team _Gyrating Flibbittygibbitts_.
 
 The problem statement can be found [here](hashcode2017_router_placement.pdf).
 The input files can be found in `input/`
