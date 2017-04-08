@@ -2,12 +2,12 @@
 
 Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Optimize Cache Servers for YouTube"** of our Team _Gyrating Flibbittygibbitts_.
 
-The problem statement can be found [here](hashcode2017_streaming_videos.pdf).
+The problem statement can be found [here](Online Qualification Round/hashcode2017_streaming_videos.pdf).
 The input files can be found in `input/`
-* [Me at the zoo](input/me_at_the_zoo.in)
-* [Videos worth spreading](videos_worth_spreading.in)
-* [Trending today](trending_today.in)
-* [Kittens](kittens.in)
+* [Me at the zoo](Online Qualification Round/input/me_at_the_zoo.in)
+* [Videos worth spreading](Online Qualification Round/input/videos_worth_spreading.in)
+* [Trending today](Online Qualification Round/input/trending_today.in)
+* [Kittens](Online Qualification Round/input/kittens.in)
 
 > Have you ever wondered what happens behind the scenes when you watch a YouTube video? 
 > As more and more people watch online videos (and as the size of these videos increases), it is critical that video-serving infrastructure is optimized to handle requests reliably and quickly.
@@ -28,7 +28,7 @@ Overall **2565511** points.
 Highest score during the _Online Qualification Round_ was 2651999 (Team _Ababahalamaha_), and 2653781 (Team _Master Exploder_) in the _Extended Round_.
 
 #### Me at the zoo
-_`498287`_ points, processed in `0.11 seconds`.
+_`498287`_ points, processed in `0.01 seconds`.
 
 Highest score seen is 516557 [*](http://codeforces.com/blog/entry/50624?#comment-345914)
 
