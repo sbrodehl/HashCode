@@ -2,5 +2,6 @@ from heapq import *
 from IO import *
 
 
-def solution(m):
-    return m
+def solution(d):
+
+    return d

@@ -36,21 +36,8 @@ def read_dataset(fpath):
         }
 
 
-def write_solution(filepath, videos_on_cache):
-    used_caches = 0
-    for cache in videos_on_cache:
-        if len(cache):
-            used_caches += 1
-
-    with open(filepath, 'w') as f:
-        f.write(str(used_caches))
-        f.write('\n')
-        for idx, c in enumerate(videos_on_cache):
-            if len(c):
-                out = str(idx) + " " + " ".join(str(i) for i in c)
-                f.write(out)
-                f.write('\n')
-
+def write_solution(filepath, d):
+    pass
 
 if __name__ == '__main__':
     import sys

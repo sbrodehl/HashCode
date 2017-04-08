@@ -24,7 +24,7 @@ def sort_array_with_id(arr):
     return sorted(tuple_arr, key=lambda t: t[1])
 
 
-def compute_solution_score(settings, m):
+def compute_solution_score(d):
     score = 0.0
 
     return np.floor(score)
