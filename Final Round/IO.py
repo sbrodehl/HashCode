@@ -48,6 +48,7 @@ def write_solution(fpath, D):
                 cables.append((x,y))
             elif val == 3:
                 routers.append((x,y))
+                cables.append((x, y))
 
     with open(fpath, 'w') as writer:
         writer.write("%d\n" % len(cables))
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     fpath = sys.argv[1]
     D = read_dataset(fpath)
     bb = D['backbone']
-    D['graph'][bb[0]+1, bb[1]] = 3
+    D['graph'][bb[0]-1, bb[1]] = 3
     write_solution(sys.argv[2], D)
 
 
