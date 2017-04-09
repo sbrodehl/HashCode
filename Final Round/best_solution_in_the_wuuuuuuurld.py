@@ -21,22 +21,26 @@ def wireless_access(a, b, d):
     mask = circle
     for w_off in range(-r, r):
         for h_off in range(-r, r):
+            # if in range of the router
             if not circle[h_off + r][w_off + r]:
                 continue
+            # skip router cell
             if h_off == 0 and w_off == 0:
                 continue
+            # transform coordinates
             x = a + h_off
             y = b + w_off
+            # checking bounds
             if x not in range(0, d["height"]):
                 continue
             if y not in range(0, d["width"]):
                 continue
+            # if this is a wireless cell
             field = g[x][y]
             if not field == 1:
                 # set others fields to zero
                 mask[h_off + r][w_off + r] = 0
                 continue
-
             # construct smallest enclosing rectangle
             r_min = np.min([a, x])
             rows = range(r_min, np.max([a, x]) + 1)
