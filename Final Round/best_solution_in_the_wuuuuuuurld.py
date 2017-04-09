@@ -3,6 +3,7 @@ import numpy as np
 from collections import deque
 from skimage.morphology import skeletonize, medial_axis
 import matplotlib.pyplot as plt
+from random import shuffle
 
 
 # http://stackoverflow.com/a/39082209
@@ -36,30 +37,27 @@ def wireless_access(a, b, d):
             if y not in range(0, d["width"]):
                 continue
             # if this is a wireless cell
-            field = g[x][y]
-            if not field == 1:
+            ftype = g[x][y]
+            if not ftype == Cell.Wireless:
                 # set others fields to zero
                 mask[h_off + r][w_off + r] = 0
                 continue
             # construct smallest enclosing rectangle
-            r_min = np.min([a, x])
-            rows = range(r_min, np.max([a, x]) + 1)
-            c_min = np.min([b, y])
-            cols = range(c_min, np.max([b, y]) + 1)
+            rows = range(np.min([a, x]), np.max([a, x]) + 1)
+            cols = range(np.min([b, y]), np.max([b, y]) + 1)
             # loop over rectangle and check condition
             # TODO if there is at least one wall cell in closing rectangle condition is true?
             for w in rows:
                 for v in cols:
                     ftype = g[w][v]
                     # if this is a wall cell
-                    if not ftype == 0:
+                    if not ftype == Cell.Wall:
                         continue
                     # check if wall is in 'sight'
                     if np.min([a, x]) <= w <= np.max([a, x]) and np.min([b, y]) <= v <= np.max([b, y]):
                         # ALARM!
                         mask[h_off + r][w_off + r] = 0
                         # TODO some early stopping?
-
     return mask
 
 
@@ -110,33 +108,31 @@ def bfs(d, start):
     return None
 
 
-def solution(d):
-    print(d["height"], d["width"])
-    m = d["graph"]
-    wireless = np.where(m == 1, m, 0)
+def place_cables(d):
+    return d
+
+
+def place_routers(d):
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
     # perform skeletonization
     skeleton = skeletonize(wireless)
     med_axis = medial_axis(wireless)
 
-    mask = wireless_access(107, 42, d)
+    skel = skeleton
+    # get all skeleton positions
+    pos = []
+    for i in range(skel.shape[0]):
+        for j in range(skel.shape[1]):
+            if skel[i][j]:
+                pos.append((i, j))
 
-    # display results
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 4),
-                             sharex=True, sharey=True,
-                             subplot_kw={'adjustable': 'box-forced'})
+    shuffle(pos)
+    a, b = pos[0]
+    mask = wireless_access(a, b, d)
+    router_score = np.sum(mask)
 
-    ax = axes.ravel()
-
-    ax[0].imshow(med_axis, cmap=plt.cm.gray)
-    ax[0].axis('off')
-    ax[0].set_title('original', fontsize=20)
-
-    ax[1].imshow(skeleton, cmap=plt.cm.gray)
-    ax[1].axis('off')
-    ax[1].set_title('skeleton', fontsize=20)
-
-    fig.tight_layout()
-    plt.show()
+    # choose this router placement
+    d["graph"][a][b] = Cell.Router
 
     return d
 

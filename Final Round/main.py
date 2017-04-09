@@ -17,7 +17,8 @@ d = read_dataset(args.input)
 start = time.time()
 
 # compute solution
-d = solution(d)
+d = place_routers(d)
+d = place_cables(d)
 
 # stop timing
 end = time.time()
