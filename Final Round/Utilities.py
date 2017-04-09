@@ -4,6 +4,9 @@ import numpy
 import numpy as np
 from IO import Cell, read_dataset
 from tqdm import tqdm
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -130,3 +133,7 @@ if __name__ == '__main__':
 
     # print("score %d " % compute_solution_score(d))
     plot_with_coverage(d)
+    print("score %d " % compute_solution_score(d))
+    # pngfile = f_out
+    # pngfile = pngfile.replace(".out", ".png")
+    # plot_with_coverage(d, pngfile, False)

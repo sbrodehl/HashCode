@@ -11,6 +11,7 @@ parser.add_argument("input", help="input file")
 parser.add_argument("output", help="output file")
 parser.add_argument("-v", action="store_true", dest="vis", default=False, help="activate visualization")
 parser.add_argument("-s", action="store_true", dest="savefig", help="save image of solution")
+parser.add_argument("-m", action="")
 args = parser.parse_args()
 
 # read input file
@@ -23,7 +24,8 @@ start = time.time()
 # d = place_routers(d)
 # d = place_cables(d)
 
-d = place_routers_randomized(d)
+d = place_routers_conv(d)
+# d = place_routers_randomized(d)
 
 # stop timing
 end = time.time()
