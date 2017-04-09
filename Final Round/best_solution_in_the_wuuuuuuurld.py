@@ -1,13 +1,10 @@
-from IO import *
-from Utilities import compute_solution_score
-import numpy as np
-from collections import deque
-from skimage.morphology import skeletonize, medial_axis
-import matplotlib.pyplot as plt
 from random import shuffle
+
+from skimage.morphology import skeletonize, medial_axis
 from tqdm import tqdm
-import time
-from tqdm import tqdm
+
+from IO import *
+from Utilities import compute_solution_score, wireless_access
 
 
 # http://stackoverflow.com/a/39082209
@@ -17,57 +14,6 @@ def unit_circle_vectorized(r):
     diff = (dists - r)
     ret = (diff < 0.5)
     return ret.astype(int)
-
-
-def wireless_access(a, b, d):
-    g = d["graph"]
-    r = d["radius"]
-    mask = np.ones((2 * r + 1, 2 * r + 1))
-    for dw in range(-r, r + 1):
-        for dh in range(-r, r + 1):
-            # skip router cell
-            if dh == 0 and dw == 0:
-                continue
-            # transform coordinates
-            x = a + dh
-            y = b + dw
-            # checking bounds
-            if x not in range(0, d["height"]):
-                continue
-            if y not in range(0, d["width"]):
-                continue
-            # if this is a wireless cell
-            if not g[x][y] == Cell.Wireless:
-                # set others fields to zero
-                mask[dh + r][dw + r] = 0
-                continue
-            # construct smallest enclosing rectangle
-            rows = range(np.min([a, x]), np.max([a, x]) + 1)
-            cols = range(np.min([b, y]), np.max([b, y]) + 1)
-            rect = g[rows][:, cols]
-            walls = (rect == Cell.Wall).astype(int)
-            if np.sum(walls):
-                mask[dh + r][dw + r] = 0
-            #
-            # loop over rectangle and check condition
-            # TODO if there is at least one wall cell in closing rectangle condition is true?
-            # in_sight = True
-            # for w in rows:
-            #     for v in cols:
-            #         # if this is a wall cell
-            #         if not g[w][v] == Cell.Wall:
-            #             continue
-            #         # check if wall is in 'sight'
-            #         if np.min([a, x]) <= w <= np.max([a, x]) and np.min([b, y]) <= v <= np.max([b, y]):
-            #             # ALARM!
-            #             # TODO some early stopping?
-            #             mask[dh + r][dw + r] = 0
-            #             in_sight = False
-            #             break
-            #
-            #     if not in_sight:
-            #         break
-    return mask
 
 
 def bfs(d, start):
@@ -221,8 +167,6 @@ def place_many_routers(d):
     return d
 
 if __name__ == '__main__':
-    import sys
-
     D = read_dataset('input/example.in')
 
     mask = wireless_access(3, 7, D)

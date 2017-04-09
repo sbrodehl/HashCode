@@ -1,9 +1,8 @@
 import argparse
 import time
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 from best_solution_in_the_wuuuuuuurld import *
+from Utilities import *
 
 parser = argparse.ArgumentParser()
 

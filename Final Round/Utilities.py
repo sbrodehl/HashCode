@@ -1,7 +1,8 @@
 import sys
+
+import numpy
 import numpy as np
 from IO import Cell
-from best_solution_in_the_wuuuuuuurld import wireless_access
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -59,3 +60,54 @@ def compute_solution_score(d):
     coverage = (coverage == 2).astype(np.int8)
     score = 1000 * np.sum(coverage)
     return np.floor(score + score_cost)
+
+
+def wireless_access(a, b, d):
+    g = d["graph"]
+    r = d["radius"]
+    mask = np.ones((2 * r + 1, 2 * r + 1))
+    for dw in range(-r, r + 1):
+        for dh in range(-r, r + 1):
+            # skip router cell
+            if dh == 0 and dw == 0:
+                continue
+            # transform coordinates
+            x = a + dh
+            y = b + dw
+            # checking bounds
+            if x not in range(0, d["height"]):
+                continue
+            if y not in range(0, d["width"]):
+                continue
+            # if this is a wireless cell
+            if not g[x][y] == Cell.Wireless:
+                # set others fields to zero
+                mask[dh + r][dw + r] = 0
+                continue
+            # construct smallest enclosing rectangle
+            rows = range(np.min([a, x]), np.max([a, x]) + 1)
+            cols = range(np.min([b, y]), np.max([b, y]) + 1)
+            rect = g[rows][:, cols]
+            walls = (rect == Cell.Wall).astype(int)
+            if np.sum(walls):
+                mask[dh + r][dw + r] = 0
+            #
+            # loop over rectangle and check condition
+            # TODO if there is at least one wall cell in closing rectangle condition is true?
+            # in_sight = True
+            # for w in rows:
+            #     for v in cols:
+            #         # if this is a wall cell
+            #         if not g[w][v] == Cell.Wall:
+            #             continue
+            #         # check if wall is in 'sight'
+            #         if np.min([a, x]) <= w <= np.max([a, x]) and np.min([b, y]) <= v <= np.max([b, y]):
+            #             # ALARM!
+            #             # TODO some early stopping?
+            #             mask[dh + r][dw + r] = 0
+            #             in_sight = False
+            #             break
+            #
+            #     if not in_sight:
+            #         break
+    return mask
