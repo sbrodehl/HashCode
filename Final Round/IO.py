@@ -2,6 +2,7 @@ from Utilities import *
 import numpy as np
 from collections import deque
 
+
 class Cell:
     Backbone, Void, Wall, Wireless, Router, ConnectedRouter, Cable = range(-2, 5)
 
@@ -38,6 +39,7 @@ def read_dataset(fpath):
             'backbone': backbone,
             'graph': matrix
         }
+
 
 def _find_solution_pahts(d):
     dx = [-1, 0, 1]
@@ -77,6 +79,7 @@ def _find_solution_pahts(d):
                         visited[child[0]][child[1]] = True
 
     return cables, routers
+
 
 def write_solution(fpath, D):
     # look for cables and routers, find positions and write that stuff
