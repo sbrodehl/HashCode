@@ -28,3 +28,22 @@ write_solution(args.output, d)
 
 score = compute_solution_score(d)
 tqdm.write("Score {0:.0f} in {1:.2f}s".format(score, (end - start)))
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 4),
+                         sharex=True, sharey=True,
+                         subplot_kw={'adjustable': 'box-forced'})
+
+ax = axes.ravel()
+
+ax[0].imshow(d['graph'], cmap=plt.cm.gray)
+ax[0].axis('off')
+ax[0].set_title('original', fontsize=20)
+
+ax[1].imshow(d['graph'], cmap=plt.cm.gray)
+ax[1].axis('off')
+ax[1].set_title('skeleton', fontsize=20)
+
+fig.tight_layout()
+plt.show()
+
+

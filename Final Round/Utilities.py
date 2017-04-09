@@ -41,9 +41,9 @@ def compute_solution_score(d):
                 cables.append((x, y))
 
     # budget part of scoring
-    score_cost = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_routers'])
+    score_cost = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_router'])
 
     # the other part
     # todo.
 
-    return np.floor(score)
+    return np.floor(score + score_cost)

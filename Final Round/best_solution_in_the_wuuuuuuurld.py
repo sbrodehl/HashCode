@@ -65,29 +65,28 @@ def bfs(d, start):
     dx = [-1, 0, 1]
     dy = [-1, 0, 1]
 
-    visited = [[False] * d['width']] * d['height']
-    parent = [[-1] * d['width']] * d['height']
+    visited = np.zeros((d['height'], d['width']), dtype=np.bool)
+    parent = (np.zeros((d['height'], d['width']), dtype=np.int32) - 1).tolist()
 
     queue = deque()
-
     queue.append(start)
     visited[start[0]][start[1]] = True
 
-    while len(queue) > 0:
+    while queue:
         cur = queue.popleft()
 
-        if cur != start:
-            # check if we already found a connection
-            if d['graph'][cur] in [2, 3]:
-                # generate path from parent array
-                path = []
-                a = cur
-                while a != start:
-                    path.append(a)
-                    a = parent[a[0]][a[1]]
+        # check goal condition
+        if d['graph'][cur] >= Cell.ConnectedRouter or cur == d['backbone']:
+            # generate path from parent array
+            path = []
+            a = cur
+            while a != start:
                 path.append(a)
-                return path
+                a = parent[a[0]][a[1]]
+            path.append(a)
+            return path[1:]
 
+        # add children
         # check neighbors
         for ddx in dx:
             for ddy in dy:
@@ -98,17 +97,25 @@ def bfs(d, start):
                 # only if still in the grid
                 if 0 <= child_x < d['height'] and 0 <= child_y < d['width']:
                     child = (child_x, child_y)
-                    # only "walkable" cells
-                    if d['graph'][child] in [1, 2, 3]:
-                        if not visited[child[0]][child[1]]:
-                            queue.append(child)
-                            visited[child[0]][child[1]] = True
-                            parent[child[0]][child[1]] = cur
+                    # everything is "walkable" cells
+                    if not visited[child[0]][child[1]]:
+                        queue.append(child)
+                        visited[child[0]][child[1]] = True
+                        parent[child[0]][child[1]] = cur
 
     return None
 
 
 def place_cables(d):
+    for a, row in enumerate(d['graph']):
+        for b, cell in enumerate(row):
+            if cell == Cell.Router:
+                for c in bfs(d, (a, b)):
+                    if d['graph'][c] == Cell.Router:
+                        d['graph'][c] = Cell.ConnectedRouter
+                    else:
+                        d['graph'][c] = Cell.Cable
+
     return d
 
 
@@ -140,15 +147,12 @@ def place_routers(d):
 if __name__ == '__main__':
     import sys
 
-    # fpath = sys.argv[1]
     D = read_dataset('input/example.in')
-    bb = D['backbone']
-    D['graph'][bb] = 2
 
     # set routers
-    D['graph'][3, 6] = 3
-    D['graph'][3, 9] = 3
+    D['graph'][3, 6] = Cell.Router
+    D['graph'][3, 9] = Cell.Router
 
     print(bfs(D, (3, 9)))
 
-    # write_solution(sys.argv[2], D)
+    write_solution('output/example.out', D)

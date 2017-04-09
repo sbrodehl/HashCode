@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Cell:
-    Void, Wall, Wireless, Router, Cable = range(-1, 4)
+    Backbone, Void, Wall, Wireless, Router, ConnectedRouter, Cable = range(-2, 5)
 
 
 def read_dataset(fpath):
@@ -48,9 +48,9 @@ def write_solution(fpath, D):
     graph = D['graph']
     for x, row in enumerate(graph):
         for y, val in enumerate(row):
-            if val == 2:
+            if val == Cell.Cable:
                 cables.append((x, y))
-            elif val == 3:
+            elif val == Cell.ConnectedRouter:
                 routers.append((x, y))
                 cables.append((x, y))
 
@@ -72,5 +72,5 @@ if __name__ == '__main__':
     fpath = sys.argv[1]
     D = read_dataset(fpath)
     bb = D['backbone']
-    D['graph'][bb[0] - 1, bb[1]] = 3
+    D['graph'][bb[0] - 1, bb[1]] = Cell.Cable
     write_solution(sys.argv[2], D)
