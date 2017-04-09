@@ -144,6 +144,57 @@ def place_routers(d):
 
     return d
 
+def add_cabel(d, new_router, remaining_budget):
+    path = bfs(d, new_router)
+    cost = len(path) * d['price_backbone'] + d['price_router']
+
+    if cost <= remaining_budget:
+        for c in path:
+            if d['graph'][c] == Cell.Router:
+                d['graph'][c] = Cell.ConnectedRouter
+            else:
+                d['graph'][c] = Cell.Cable
+
+        return d, True, cost
+
+    return d, False, cost
+
+def place_many_routers(d):
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
+    # perform skeletonization
+    skeleton = skeletonize(wireless)
+    med_axis = medial_axis(wireless)
+
+    skel = skeleton
+    # skel = med_axis
+    # get all skeleton positions
+    pos = []
+    for i in range(skel.shape[0]):
+        for j in range(skel.shape[1]):
+            if skel[i][j]:
+                pos.append((i, j))
+
+    budget = d['budget']
+    shuffle(pos)
+
+    max_num_routers = min([int(d['budget'] / d['price_router']), len(pos)])
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
+    print(" skeleton: %d" % len(pos))
+
+    for i in tqdm(range(max_num_routers), desc="Placing Routers"):
+        new_router = pos[i]
+        a, b = new_router
+
+        # check if remaining budget is enough
+        d["graph"][a][b] = Cell.Router
+        d, ret, cost = add_cabel(d, new_router, budget)
+        budget -= cost
+
+        if not ret:
+            break
+
+    return d
 
 if __name__ == '__main__':
     import sys
