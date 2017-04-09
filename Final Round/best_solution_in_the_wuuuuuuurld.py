@@ -1,5 +1,5 @@
 from IO import *
-from Utilities import *
+from Utilities import compute_solution_score
 import numpy as np
 from collections import deque
 from skimage.morphology import skeletonize, medial_axis
@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from random import shuffle
 from tqdm import tqdm
 import time
+from tqdm import tqdm
 
 
 # http://stackoverflow.com/a/39082209
@@ -126,6 +127,21 @@ def place_cables(d):
 
     return d
 
+def compute_skel(d):
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
+    # perform skeletonization
+    skeleton = skeletonize(wireless)
+    med_axis = medial_axis(wireless)
+
+    skel = skeleton
+    # get all skeleton positions
+    pos = []
+    for i in range(skel.shape[0]):
+        for j in range(skel.shape[1]):
+            if skel[i][j]:
+                pos.append((i, j))
+
+    return skel, pos
 
 def place_routers(d):
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)

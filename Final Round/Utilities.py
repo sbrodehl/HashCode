@@ -1,12 +1,34 @@
 import sys
 import numpy as np
-
 from IO import Cell
 from best_solution_in_the_wuuuuuuurld import wireless_access
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 
 def csv_print(mat, fmt='%.5f'):
     np.savetxt(sys.stdout.buffer, mat, fmt=fmt, newline="\n")
+
+
+def sort_array_with_id(arr):
+    """
+    Sort array ascending and keep track of ids.
+    :param arr: array with values
+    :return: array with tuples (id, val)
+    """
+    tuple_arr = [(id, arr[id]) for id in range(len(arr))]
+    return sorted(tuple_arr, key=lambda t: t[1])
+
+
+def plot_graph_with_skeleton(d, skel):
+    fig = plt.figure()
+
+    plt.imshow(d['graph'])
+    plt.axis('off')
+    # plt.set_title('original', fontsize=20)
+
+    plt.imshow(skel, cmap=plt.cm.gray, alpha=0.25)
+    plt.show()
 
 
 def compute_solution_score(d):
