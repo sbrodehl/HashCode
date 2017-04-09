@@ -23,24 +23,34 @@ The input files can be found in `input/`
 ## Algorithm
 tba.
 
+If you have questions about the used algorithms (etc.) please feel free and ask, just open an issue!
+
 
 ## Scores
 
-Overall **?** points.
+Overall **328,431,739** points.
 
-Highest score during the Final Round_ was ? (Team _?_), and ? (Team _?_) in the _?_.
+Highest score during the _Final Round_ was 548,065,447 points (Team _AIM Tech_), and 550,156,575 points (Team _The Skyrmions_) in the _Extended round_.
 
 #### Charleston road
-_`0`_ points, processed in `0.00 seconds`.
+_`21,548,111`_ points.
+
+![Charleston road](output/charleston_road.png)
 
 #### Let's go higher
-_`0`_ points, processed in `0.00 seconds`.
+_`174,141,502`_ points.
+
+![Let's go higher](output/lets_go_higher.png)
 
 #### Opera
-_`0`_ points, processed in `0.00 seconds`.
+_`96,199,033`_ points.
+
+![Opera](output/opera.png)
 
 #### Rue de Londres
-_`0`_ points, processed in `0.00 seconds`
+_`36,543,093`_ points.
+
+![Rue de Londres](output/rue_de_londres.png)
 
 ## Authors
 
