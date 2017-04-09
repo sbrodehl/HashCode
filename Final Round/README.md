@@ -1,8 +1,9 @@
-# \#HashCode2017 Final Round - Router placement
+# \#Hash Code2017 Final Round - Router placement
 
-Solutions and code for the [Google \#HashCode 2017 Challenge](https://hashcode.withgoogle.com) **"Router placement"** of our Team _Gyrating Flibbittygibbitts_.
+Solutions and code for the [Google \#Hash Code 2017 Challenge](https://hashcode.withgoogle.com) **"Router placement"** of our Team _Gyrating Flibbittygibbitts_.
 
 The problem statement can be found [here](hashcode2017_router_placement.pdf).
+
 The input files can be found in `input/`
 * [Charleston road](input/charleston_road.in)
 * [Let's go higher](input/lets_go_higher.in)
@@ -15,7 +16,8 @@ The input files can be found in `input/`
 > Typically, buildings are connected to the Internet using a fiber backbone.
 > In order to provide wireless Internet access, wireless routers are placed around the building and connected using fiber cables to the backbone.
 > The larger and more complex the building, the harder it is to pick router locations and decide how to lay down the connecting cables.
-> _from [Problem statement for Final Round, Hash Code 2017](https://hashcode.withgoogle.com/past_editions.html)_
+>
+> _from [Problem statement for Final Round, Google \#Hash Code 2017](https://hashcode.withgoogle.com/past_editions.html)_
 
 
 ## Algorithm
