@@ -73,6 +73,7 @@ def place_cables(d):
 
     return d
 
+
 def compute_skel(d):
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
     # perform skeletonization
@@ -88,6 +89,7 @@ def compute_skel(d):
                 pos.append((i, j))
 
     return skel, pos
+
 
 def place_routers(d):
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
@@ -114,6 +116,7 @@ def place_routers(d):
 
     return d
 
+
 def add_cabel(d, new_router, remaining_budget):
     path = bfs(d, new_router)
     cost = len(path) * d['price_backbone'] + d['price_router']
@@ -128,6 +131,7 @@ def add_cabel(d, new_router, remaining_budget):
         return d, True, cost
 
     return d, False, cost
+
 
 def place_many_routers(d):
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
@@ -165,6 +169,7 @@ def place_many_routers(d):
             break
 
     return d
+
 
 if __name__ == '__main__':
     D = read_dataset('input/example.in')
