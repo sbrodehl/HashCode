@@ -134,12 +134,13 @@ def place_routers(d):
                 pos.append((i, j))
 
     shuffle(pos)
-    a, b = pos[0]
-    mask = wireless_access(a, b, d)
-    router_score = np.sum(mask)
+    for i in range(30):
+        a, b = pos[i]
+        mask = wireless_access(a, b, d)
+        router_score = np.sum(mask)
 
-    # choose this router placement
-    d["graph"][a][b] = Cell.Router
+        # choose this router placement
+        d["graph"][a][b] = Cell.Router
 
     return d
 
