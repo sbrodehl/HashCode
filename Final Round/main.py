@@ -34,6 +34,8 @@ score = compute_solution_score(d)
 tqdm.write("Score {0:.0f} in {1:.2f}s".format(score, (end - start)))
 
 if args.vis:
+    pngfile = str(args.output)
+    pngfile = pngfile.replace(".out", ".png")
     skel, pos = compute_skel(d)
     # plot_graph_with_skeleton(d, skel)
 
