@@ -49,9 +49,9 @@ def write_solution(fpath, D):
     for x, row in enumerate(graph):
         for y, val in enumerate(row):
             if val == 2:
-                cables.append((x,y))
+                cables.append((x, y))
             elif val == 3:
-                routers.append((x,y))
+                routers.append((x, y))
                 cables.append((x, y))
 
     with open(fpath, 'w') as writer:
@@ -65,10 +65,12 @@ def write_solution(fpath, D):
 
         writer.close()
 
+
 if __name__ == '__main__':
     import sys
+
     fpath = sys.argv[1]
     D = read_dataset(fpath)
     bb = D['backbone']
-    D['graph'][bb[0]-1, bb[1]] = 3
+    D['graph'][bb[0] - 1, bb[1]] = 3
     write_solution(sys.argv[2], D)
