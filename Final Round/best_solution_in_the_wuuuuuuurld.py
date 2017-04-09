@@ -17,8 +17,8 @@ def unit_circle_vectorized(r):
 
 
 def bfs(d, start):
-    dx = [-1, 0, 1]
-    dy = [-1, 0, 1]
+    dx = [0, -1, 1]
+    dy = [0, -1, 1]
 
     visited = np.zeros((d['height'], d['width']), dtype=np.bool)
     parent = (np.zeros((d['height'], d['width']), dtype=np.int32) - 1).tolist()
