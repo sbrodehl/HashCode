@@ -182,4 +182,5 @@ if __name__ == '__main__':
     D = place_cables(D)
 
     score = compute_solution_score(D)
+    print(score)
     write_solution('output/example.out', D)
