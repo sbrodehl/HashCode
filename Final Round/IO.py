@@ -2,6 +2,10 @@ from Utilities import *
 import numpy as np
 
 
+class Cell:
+    Void, Wall, Wireless, Router, Cable = range(-1, 4)
+
+
 def read_dataset(fpath):
     with open(fpath, 'r') as reader:
         # size of grid
@@ -12,17 +16,17 @@ def read_dataset(fpath):
         tmp = reader.readline().split(" ")
         backbone = (int(tmp[0]), int(tmp[1]))
         # read the matrix
-        matrix = np.zeros((H, W))
+        matrix = np.zeros((H, W), dtype=np.int8)
 
         for line in range(H):
             tmp = reader.readline()
             for col in range(W):
                 if tmp[col] == '-':
-                    matrix[line, col] = -1
+                    matrix[line, col] = Cell.Void
                 elif tmp[col] == '#':
-                    matrix[line, col] = 0
+                    matrix[line, col] = Cell.Wall
                 else:
-                    matrix[line, col] = 1
+                    matrix[line, col] = Cell.Wireless
 
         return {
             'height': H,
@@ -68,5 +72,3 @@ if __name__ == '__main__':
     bb = D['backbone']
     D['graph'][bb[0]-1, bb[1]] = 3
     write_solution(sys.argv[2], D)
-
-
