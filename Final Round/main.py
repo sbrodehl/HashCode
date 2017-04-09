@@ -1,5 +1,6 @@
 import argparse
 import time
+from tqdm import tqdm
 
 from best_solution_in_the_wuuuuuuurld import *
 
