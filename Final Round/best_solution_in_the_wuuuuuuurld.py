@@ -96,7 +96,7 @@ def bfs(d, start):
 
                 child_x, child_y = cur[0] + ddx, cur[1] + ddy
                 # only if still in the grid
-                if 0 <= child_x and child_x < d['height'] and 0 <= child_y and child_y < d['width']:
+                if 0 <= child_x < d['height'] and 0 <= child_y < d['width']:
                     child = (child_x, child_y)
                     # only "walkable" cells
                     if d['graph'][child] in [1, 2, 3]:
