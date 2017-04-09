@@ -171,6 +171,42 @@ def place_many_routers(d):
     return d
 
 
+def place_routers_randomized(d):
+    max_num_routers = int(d['budget'] / d['price_router'])
+    wireless = np.where(d["graph"] == Cell.Wireless, 0, 1)
+
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
+    budget = d['budget']
+    R = d['radius']
+
+    limit = 1e6
+
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    for i in pbar:
+        # generate random position for router
+        indices = np.argwhere(wireless == 0).tolist()
+        if len(indices) == 0:
+            break
+
+        a, b = indices[np.random.randint(0, len(indices))]
+
+        # place router
+        d["graph"][a][b] = Cell.Router
+        d, ret, cost = add_cabel(d, (a, b), budget)
+        budget -= cost
+
+        # refresh wireless map by removing new coverage
+        mask = wireless_access(a, b, d)
+        wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
+
+        if not ret:
+            break
+
+    pbar.update(max_num_routers)
+    return d
+
+
 if __name__ == '__main__':
     D = read_dataset('input/example.in')
 

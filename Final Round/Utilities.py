@@ -2,7 +2,7 @@ import sys
 
 import numpy
 import numpy as np
-from IO import Cell
+from IO import Cell, read_dataset
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -113,3 +113,57 @@ def wireless_access(a, b, d):
             #     if not in_sight:
             #         break
     return mask
+
+def plot_with_coverage(d, fpath=None, show=False):
+    # plot graph with coverage
+    fig = plt.figure()
+
+    ax = plt.Axes(fig, (0, 0, 1, 1))
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    h = d['height']
+    w = d['width']
+    dpi = 100
+    fig.set_size_inches(3 * w / dpi, 3 * h / dpi)
+    ax.imshow(d['graph'], cmap=plt.cm.viridis, extent=(0, 1, 0, 1), aspect='auto')
+
+    routers = []
+    g = d['graph']
+    for x, row in enumerate(g):
+        for y, val in enumerate(row):
+            if val == Cell.ConnectedRouter:
+                routers.append((x, y))
+
+    coverage = np.zeros((d['height'], d['width']), dtype=np.bool)
+    R = d['radius']
+    for r in range(len(routers)):
+        a, b = routers[r]
+        mask = wireless_access(a, b, d)
+        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
+
+    ax.imshow(coverage, cmap=plt.cm.gray, alpha=0.2, extent=(0, 1, 0, 1), aspect='auto')
+
+    if fpath is not None:
+        plt.savefig(fpath, dpi=dpi)
+
+    if show:
+        plt.show()
+
+if __name__ == '__main__':
+    import sys
+    f_in = sys.argv[1]
+    f_out = sys.argv[2]
+    d = read_dataset(f_in)
+
+    with open(f_out, 'r') as f:
+        n = int(f.readline())
+        for i in range(n):
+            a, b = [int(i) for i in f.readline().split(" ")]
+            d['graph'][a, b] = Cell.Cable
+        m = int(f.readline())
+        for i in range(m):
+            a, b = [int(i) for i in f.readline().split(" ")]
+            d['graph'][a, b] = Cell.ConnectedRouter
+
+    # print("score %d " % compute_solution_score(d))
+    plot_with_coverage(d)
