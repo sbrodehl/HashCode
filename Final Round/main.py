@@ -41,5 +41,3 @@ if args.savefig:
     pngfile = pngfile.replace(".out", ".png")
 
 plot_with_coverage(d, pngfile, args.vis)
-
-

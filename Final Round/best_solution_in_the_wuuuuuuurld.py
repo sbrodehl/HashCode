@@ -7,15 +7,6 @@ from IO import *
 from Utilities import compute_solution_score, wireless_access
 
 
-# http://stackoverflow.com/a/39082209
-def unit_circle_vectorized(r):
-    mask = np.arange(-r, r + 1) ** 2
-    dists = np.sqrt(mask[:, None] + mask)
-    diff = (dists - r)
-    ret = (diff < 0.5)
-    return ret.astype(int)
-
-
 def bfs(d, start):
     dx = [0, -1, 1]
     dy = [0, -1, 1]

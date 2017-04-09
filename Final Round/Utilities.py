@@ -7,20 +7,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-def csv_print(mat, fmt='%.5f'):
-    np.savetxt(sys.stdout.buffer, mat, fmt=fmt, newline="\n")
-
-
-def sort_array_with_id(arr):
-    """
-    Sort array ascending and keep track of ids.
-    :param arr: array with values
-    :return: array with tuples (id, val)
-    """
-    tuple_arr = [(id, arr[id]) for id in range(len(arr))]
-    return sorted(tuple_arr, key=lambda t: t[1])
-
-
 def plot_graph_with_skeleton(d, skel):
     fig = plt.figure()
 
@@ -53,13 +39,7 @@ def compute_solution_score(d):
         mask = wireless_access(a, b, d)
         R = d['radius']
         coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
-        # for x, row in enumerate(mask):
-        #     for y, val in enumerate(row):
-        #         if mask[x][y]:
-        #             v = y + b - d['radius']
-        #             w = x + a - d['radius']
-        #             coverage[w][v] = 2
-    # coverage = (coverage == 2).astype(np.int8)
+
     score = 1000 * np.sum(coverage)
     return np.floor(score + score_cost)
 
@@ -93,26 +73,8 @@ def wireless_access(a, b, d):
             walls = (rect == Cell.Wall).astype(int)
             if np.sum(walls):
                 mask[dh + r][dw + r] = 0
-            #
-            # loop over rectangle and check condition
-            # TODO if there is at least one wall cell in closing rectangle condition is true?
-            # in_sight = True
-            # for w in rows:
-            #     for v in cols:
-            #         # if this is a wall cell
-            #         if not g[w][v] == Cell.Wall:
-            #             continue
-            #         # check if wall is in 'sight'
-            #         if np.min([a, x]) <= w <= np.max([a, x]) and np.min([b, y]) <= v <= np.max([b, y]):
-            #             # ALARM!
-            #             # TODO some early stopping?
-            #             mask[dh + r][dw + r] = 0
-            #             in_sight = False
-            #             break
-            #
-            #     if not in_sight:
-            #         break
     return mask
+
 
 def plot_with_coverage(d, fpath=None, show=False):
     # plot graph with coverage
@@ -148,6 +110,7 @@ def plot_with_coverage(d, fpath=None, show=False):
 
     if show:
         plt.show()
+
 
 if __name__ == '__main__':
     import sys
