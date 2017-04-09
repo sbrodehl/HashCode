@@ -1,4 +1,4 @@
-# Google \#Hash Code 2017 Optimize Cache Servers for YouTube
+# Google \#Hash Code 2017 Online Qualification Round
 
 Solutions and code for the [Google \#Hash Code 2017 Challenge](https://hashcode.withgoogle.com) **"Optimize Cache Servers for YouTube"** of our Team _Gyrating Flibbittygibbitts_.
 
