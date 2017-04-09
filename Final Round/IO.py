@@ -1,6 +1,6 @@
 from Utilities import *
 import numpy as np
-
+from collections import deque
 
 class Cell:
     Backbone, Void, Wall, Wireless, Router, ConnectedRouter, Cable = range(-2, 5)
@@ -39,20 +39,51 @@ def read_dataset(fpath):
             'graph': matrix
         }
 
+def _find_solution_pahts(d):
+    dx = [-1, 0, 1]
+    dy = [-1, 0, 1]
+
+    visited = np.zeros((d['height'], d['width']), dtype=np.bool)
+    start = d['backbone']
+
+    queue = deque()
+    queue.append(start)
+    visited[start[0]][start[1]] = True
+
+    cables = []
+    routers = []
+
+    while queue:
+        cur = queue.popleft()
+
+        if d['graph'][cur] >= Cell.ConnectedRouter:
+            cables.append(cur)
+        if d['graph'][cur] == Cell.ConnectedRouter:
+            routers.append(cur)
+
+        # check neighbors
+        for ddx in dx:
+            for ddy in dy:
+                if ddx == 0 and ddy == 0:
+                    continue
+
+                child_x, child_y = cur[0] + ddx, cur[1] + ddy
+                # only if still in the grid
+                if 0 <= child_x < d['height'] and 0 <= child_y < d['width']:
+                    child = (child_x, child_y)
+                    # everything is "walkable" cells
+                    if not visited[child[0]][child[1]] and d['graph'][child] >= Cell.ConnectedRouter:
+                        queue.append(child)
+                        visited[child[0]][child[1]] = True
+
+    return cables, routers
 
 def write_solution(fpath, D):
     # look for cables and routers, find positions and write that stuff
     cables = []
     routers = []
 
-    graph = D['graph']
-    for x, row in enumerate(graph):
-        for y, val in enumerate(row):
-            if val == Cell.Cable:
-                cables.append((x, y))
-            elif val == Cell.ConnectedRouter:
-                routers.append((x, y))
-                cables.append((x, y))
+    cables, routers = _find_solution_pahts(D)
 
     with open(fpath, 'w') as writer:
         writer.write("%d\n" % len(cables))
