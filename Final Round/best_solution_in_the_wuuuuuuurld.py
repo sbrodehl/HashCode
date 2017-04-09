@@ -5,6 +5,7 @@ from collections import deque
 from skimage.morphology import skeletonize, medial_axis
 import matplotlib.pyplot as plt
 from random import shuffle
+from tqdm import tqdm
 import time
 
 

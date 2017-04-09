@@ -41,7 +41,7 @@ def read_dataset(fpath):
         }
 
 
-def _find_solution_pahts(d):
+def _find_solution_paths(d):
     dx = [-1, 0, 1]
     dy = [-1, 0, 1]
 
@@ -86,7 +86,7 @@ def write_solution(fpath, D):
     cables = []
     routers = []
 
-    cables, routers = _find_solution_pahts(D)
+    cables, routers = _find_solution_paths(D)
 
     with open(fpath, 'w') as writer:
         writer.write("%d\n" % len(cables))
