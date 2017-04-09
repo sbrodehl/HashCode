@@ -1,4 +1,3 @@
-from Utilities import *
 import numpy as np
 from collections import deque
 
@@ -37,7 +36,8 @@ def read_dataset(fpath):
             'price_router': Pr,
             'budget': B,
             'backbone': backbone,
-            'graph': matrix
+            'graph': matrix,
+            'original': matrix.copy()
         }
 
 
