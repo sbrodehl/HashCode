@@ -48,22 +48,24 @@ def compute_solution_score(d):
 
     # budget part of scoring
     score_cost = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_router'])
-    coverage = (d['original'] == Cell.Wireless).astype(np.int8)
+    coverage = np.zeros(d['graph'].shape).astype(np.int8)
     for (a, b) in routers:
         mask = wireless_access(a, b, d)
-        for x, row in enumerate(mask):
-            for y, val in enumerate(row):
-                if mask[x][y]:
-                    w = x + a - d['radius']
-                    v = y + b - d['radius']
-                    coverage[w][v] = 2
-    coverage = (coverage == 2).astype(np.int8)
+        R = d['radius']
+        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
+        # for x, row in enumerate(mask):
+        #     for y, val in enumerate(row):
+        #         if mask[x][y]:
+        #             v = y + b - d['radius']
+        #             w = x + a - d['radius']
+        #             coverage[w][v] = 2
+    # coverage = (coverage == 2).astype(np.int8)
     score = 1000 * np.sum(coverage)
     return np.floor(score + score_cost)
 
 
 def wireless_access(a, b, d):
-    g = d["graph"]
+    g = d["original"]
     r = d["radius"]
     mask = np.ones((2 * r + 1, 2 * r + 1))
     for dw in range(-r, r + 1):
