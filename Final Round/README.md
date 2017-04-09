@@ -1,4 +1,4 @@
-# \#Hash Code 2017 Final Round - Router placement
+# Google \#Hash Code 2017 Final Round
 
 Solutions and code for the [Google \#Hash Code 2017 Challenge](https://hashcode.withgoogle.com) **"Router placement"** of our Team _Gyrating Flibbittygibbitts_.
 
