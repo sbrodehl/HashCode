@@ -162,6 +162,41 @@ def place_many_routers(d):
     return d
 
 
+def fill_skeletons(d):
+    budget = d['budget']
+    R = d['radius']
+    max_num_routers = int(d['budget'] / d['price_router'])
+    coverage = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.bool)
+
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    while budget > 0:
+        # perform skeletonization
+        # skeleton = skeletonize(coverage)
+        skeleton = medial_axis(coverage)
+        # get all skeleton positions
+        pos = np.argwhere(skeleton > 0).tolist()
+        # escape if no positions left
+        if not len(pos):
+            break
+        # get a random position
+        shuffle(pos)
+        a, b = pos[0]
+        # place router
+        d["graph"][a][b] = Cell.Router
+        d, ret, cost = add_cabel(d, (a, b), budget)
+        if not ret:
+            print("No budget available!")
+            break
+        budget -= cost
+        # refresh wireless map by removing new coverage
+        m = wireless_access(a, b, d).astype(np.bool)
+        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~m
+        pbar.update()
+    pbar.close()
+
+    return d
+
+
 def place_routers_randomized(d):
     max_num_routers = int(d['budget'] / d['price_router'])
     wireless = np.where(d["graph"] == Cell.Wireless, 0, 1)
