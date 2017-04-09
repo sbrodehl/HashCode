@@ -86,8 +86,8 @@ def plot_with_coverage(d, fpath=None, show=False):
     h = d['height']
     w = d['width']
     dpi = 100
-    fig.set_size_inches(3 * w / dpi, 3 * h / dpi)
-    ax.imshow(d['graph'], cmap=plt.cm.viridis, extent=(0, 1, 0, 1), aspect='auto')
+    fig.set_size_inches(10 * w / dpi, 10 * h / dpi)
+    ax.imshow(d['graph'], cmap=plt.cm.viridis, extent=(0, 1, 0, 1), aspect='auto', interpolation='none')
 
     routers = []
     g = d['graph']
@@ -103,7 +103,7 @@ def plot_with_coverage(d, fpath=None, show=False):
         mask = wireless_access(a, b, d)
         coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
 
-    ax.imshow(coverage, cmap=plt.cm.gray, alpha=0.2, extent=(0, 1, 0, 1), aspect='auto')
+    ax.imshow(coverage, cmap=plt.cm.gray, alpha=0.2, extent=(0, 1, 0, 1), aspect='auto', interpolation='none')
 
     if fpath is not None:
         plt.savefig(fpath, dpi=dpi)
