@@ -30,9 +30,9 @@ start = time.time()
 if args.method == 'rand':
     d = place_routers_randomized(d)
 elif args.method == 'conv':
-    d = place_routers_conv(d)
+    d = place_routers_by_convolution(d)
 elif args.method == 'skel':
-    d = fill_skeletons(d)
+    d = place_routers_on_skeleton_iterative(d)
 else:
     raise Exception('No such method!')
 

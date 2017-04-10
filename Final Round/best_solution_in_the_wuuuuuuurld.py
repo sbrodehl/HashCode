@@ -9,7 +9,200 @@ from IO import *
 from Utilities import compute_solution_score, wireless_access
 
 
-def bfs(d, start):
+def place_routers_on_skeleton(d):
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
+    # perform skeletonization
+    skeleton = skeletonize(wireless)
+    med_axis = medial_axis(wireless)
+
+    skel = skeleton
+    # skel = med_axis
+    # get all skeleton positions
+    pos = []
+    for i in range(skel.shape[0]):
+        for j in range(skel.shape[1]):
+            if skel[i][j]:
+                pos.append((i, j))
+
+    budget = d['budget']
+    shuffle(pos)
+
+    max_num_routers = min([int(d['budget'] / d['price_router']), len(pos)])
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
+    print(" skeleton: %d" % len(pos))
+
+    for i in tqdm(range(max_num_routers), desc="Placing Routers"):
+        new_router = pos[i]
+        a, b = new_router
+
+        # check if remaining budget is enough
+        d["graph"][a][b] = Cell.Router
+        d, ret, cost = _add_cabel(d, new_router, budget)
+        budget -= cost
+
+        if not ret:
+            break
+
+    return d
+
+def place_routers_on_skeleton_iterative(d):
+    budget = d['budget']
+    R = d['radius']
+    max_num_routers = int(d['budget'] / d['price_router'])
+    coverage = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.bool)
+
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    while budget > 0:
+        # perform skeletonization
+        # skeleton = skeletonize(coverage)
+        skeleton = medial_axis(coverage)
+        # get all skeleton positions
+        pos = np.argwhere(skeleton > 0).tolist()
+        # escape if no positions left
+        if not len(pos):
+            break
+        # get a random position
+        shuffle(pos)
+        a, b = pos[0]
+        # place router
+        d["graph"][a][b] = Cell.Router
+        d, ret, cost = _add_cabel(d, (a, b), budget)
+        if not ret:
+            print("No budget available!")
+            break
+        budget -= cost
+        # refresh wireless map by removing new coverage
+        m = wireless_access(a, b, d).astype(np.bool)
+        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~m
+        pbar.update()
+    pbar.close()
+
+    return d
+
+
+def place_routers_randomized(d):
+    max_num_routers = int(d['budget'] / d['price_router'])
+    wireless = np.where(d["graph"] == Cell.Wireless, 0, 1)
+
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
+    budget = d['budget']
+    R = d['radius']
+
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    for i in pbar:
+        # generate random position for router
+        indices = np.argwhere(wireless == 0).tolist()
+        x, y = indices[np.random.randint(0, len(indices))]
+
+        if len(indices) == 0:
+            pbar.close()
+            print("No more suitable positions left!")
+            return d
+
+        # modify graph
+        d["graph"][x][y] = Cell.Router
+        d, ret, cost = _add_cabel(d, (x, y), budget)
+
+        if ret:
+            budget -= cost
+
+            # refresh wireless map by removing new coverage
+            mask = wireless_access(x, y, d)
+            wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
+        else:
+            # no more budget left
+            pbar.close()
+            print("No budget available!")
+            return d
+
+    pbar.update(max_num_routers)
+    return d
+
+
+def place_routers_by_convolution(d):
+    max_num_routers = int(d['budget'] / d['price_router'])
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
+    walls = np.where(d['graph'] == Cell.Wall, 1, 0).astype(np.float64)
+
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
+    budget = d['budget']
+    R = d['radius']
+
+    # kernel = np.ones((2*R+1, 2*R+1))
+    kernel = (_gkern2(2 * R + 1, 2) * 1e2)
+
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    while budget > 0:
+        # convolve
+        mat = signal.fftconvolve(wireless, kernel, mode='same')
+
+        found = False
+        while not found:
+            # get the max of the conv matrix
+            mat_max = mat.max()
+            max_positions = np.argwhere(mat == mat_max).tolist()
+            selected_pos = max_positions[np.random.randint(0, len(max_positions))]
+
+            # check if we have suitable positions left
+            if mat_max == -np.inf:
+                pbar.close()
+                print("No more suitable positions left!")
+                return d
+
+            x, y = selected_pos
+
+            # max can be on a wall position... ignore it
+            if d['graph'][x][y] <= Cell.Wall:
+                pbar.write('> Optimal position on wall cell...')
+                mat[x][y] = -np.inf
+            else:
+                found = True
+
+        # update progress bar
+        pbar.update()
+
+        # modify graph
+        d["graph"][x][y] = Cell.Router
+        d, ret, cost = _add_cabel(d, (x, y), budget)
+
+        # check if new path is not to expensive
+        if ret:
+            budget -= cost
+
+            # refresh wireless map by removing new coverage
+            # mask = wireless_access(x, y, d)
+            # wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~mask.astype(np.bool)
+            wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] -= kernel
+        else:
+            # we've not enough budget
+            pbar.close()
+            print("No budget available!")
+            return d
+
+    pbar.close()
+    return d
+
+
+def _add_cabel(d, new_router, remaining_budget):
+    path = _bfs(d, new_router)
+    cost = len(path) * d['price_backbone'] + d['price_router']
+
+    if cost <= remaining_budget:
+        for c in path:
+            if d['graph'][c] == Cell.Router:
+                d['graph'][c] = Cell.ConnectedRouter
+            else:
+                d['graph'][c] = Cell.Cable
+
+        return d, True, cost
+
+    return d, False, cost
+
+
+def _bfs(d, start):
     dx = [0, -1, 1]
     dy = [0, -1, 1]
 
@@ -54,188 +247,7 @@ def bfs(d, start):
     return None
 
 
-def place_cables(d):
-    for a, row in enumerate(d['graph']):
-        for b, cell in enumerate(row):
-            if cell == Cell.Router:
-                for c in bfs(d, (a, b)):
-                    if d['graph'][c] == Cell.Router:
-                        d['graph'][c] = Cell.ConnectedRouter
-                    else:
-                        d['graph'][c] = Cell.Cable
-
-    return d
-
-
-def compute_skel(d):
-    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
-    # perform skeletonization
-    skeleton = skeletonize(wireless)
-    med_axis = medial_axis(wireless)
-
-    skel = skeleton
-    # get all skeleton positions
-    pos = []
-    for i in range(skel.shape[0]):
-        for j in range(skel.shape[1]):
-            if skel[i][j]:
-                pos.append((i, j))
-
-    return skel, pos
-
-
-def place_routers(d):
-    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
-    # perform skeletonization
-    skeleton = skeletonize(wireless)
-    med_axis = medial_axis(wireless)
-
-    skel = skeleton
-    # get all skeleton positions
-    pos = []
-    for i in range(skel.shape[0]):
-        for j in range(skel.shape[1]):
-            if skel[i][j]:
-                pos.append((i, j))
-
-    shuffle(pos)
-    for i in range(30):
-        a, b = pos[i]
-        mask = wireless_access(a, b, d)
-        router_score = np.sum(mask)
-
-        # choose this router placement
-        d["graph"][a][b] = Cell.Router
-
-    return d
-
-
-def add_cabel(d, new_router, remaining_budget):
-    path = bfs(d, new_router)
-    cost = len(path) * d['price_backbone'] + d['price_router']
-
-    if cost <= remaining_budget:
-        for c in path:
-            if d['graph'][c] == Cell.Router:
-                d['graph'][c] = Cell.ConnectedRouter
-            else:
-                d['graph'][c] = Cell.Cable
-
-        return d, True, cost
-
-    return d, False, cost
-
-
-def place_many_routers(d):
-    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
-    # perform skeletonization
-    skeleton = skeletonize(wireless)
-    med_axis = medial_axis(wireless)
-
-    skel = skeleton
-    # skel = med_axis
-    # get all skeleton positions
-    pos = []
-    for i in range(skel.shape[0]):
-        for j in range(skel.shape[1]):
-            if skel[i][j]:
-                pos.append((i, j))
-
-    budget = d['budget']
-    shuffle(pos)
-
-    max_num_routers = min([int(d['budget'] / d['price_router']), len(pos)])
-    print("Num of routers constrained by:")
-    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
-    print(" skeleton: %d" % len(pos))
-
-    for i in tqdm(range(max_num_routers), desc="Placing Routers"):
-        new_router = pos[i]
-        a, b = new_router
-
-        # check if remaining budget is enough
-        d["graph"][a][b] = Cell.Router
-        d, ret, cost = add_cabel(d, new_router, budget)
-        budget -= cost
-
-        if not ret:
-            break
-
-    return d
-
-
-def fill_skeletons(d):
-    budget = d['budget']
-    R = d['radius']
-    max_num_routers = int(d['budget'] / d['price_router'])
-    coverage = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.bool)
-
-    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
-    while budget > 0:
-        # perform skeletonization
-        # skeleton = skeletonize(coverage)
-        skeleton = medial_axis(coverage)
-        # get all skeleton positions
-        pos = np.argwhere(skeleton > 0).tolist()
-        # escape if no positions left
-        if not len(pos):
-            break
-        # get a random position
-        shuffle(pos)
-        a, b = pos[0]
-        # place router
-        d["graph"][a][b] = Cell.Router
-        d, ret, cost = add_cabel(d, (a, b), budget)
-        if not ret:
-            print("No budget available!")
-            break
-        budget -= cost
-        # refresh wireless map by removing new coverage
-        m = wireless_access(a, b, d).astype(np.bool)
-        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~m
-        pbar.update()
-    pbar.close()
-
-    return d
-
-
-def place_routers_randomized(d):
-    max_num_routers = int(d['budget'] / d['price_router'])
-    wireless = np.where(d["graph"] == Cell.Wireless, 0, 1)
-
-    print("Num of routers constrained by:")
-    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
-    budget = d['budget']
-    R = d['radius']
-
-    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
-    for i in pbar:
-        # generate random position for router
-        indices = np.argwhere(wireless == 0).tolist()
-        if len(indices) == 0:
-            print("No more suitable positions left!")
-            break
-
-        a, b = indices[np.random.randint(0, len(indices))]
-
-        # place router
-        d["graph"][a][b] = Cell.Router
-        d, ret, cost = add_cabel(d, (a, b), budget)
-        budget -= cost
-
-        # refresh wireless map by removing new coverage
-        mask = wireless_access(a, b, d)
-        wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
-
-        if not ret:
-            print("No budget available!")
-            break
-
-    pbar.update(max_num_routers)
-    return d
-
-
-def gkern2(kernlen=21, nsig=3):
+def _gkern2(kernlen=21, nsig=3):
     """Returns a 2D Gaussian kernel array."""
 
     # create nxn zeros
@@ -244,74 +256,6 @@ def gkern2(kernlen=21, nsig=3):
     inp[kernlen // 2, kernlen // 2] = 1
     # gaussian-smooth the dirac, resulting in a gaussian filter mask
     return fi.gaussian_filter(inp, nsig)
-
-
-def place_routers_conv(d):
-    max_num_routers = int(d['budget'] / d['price_router'])
-    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
-    walls = np.where(d['graph'] == Cell.Wall, 1, 0).astype(np.float64)
-
-    wireless = wireless - 1 * walls
-
-    print("Num of routers constrained by:")
-    print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
-    budget = d['budget']
-    R = d['radius']
-
-    # kernel = np.ones((2*R+1, 2*R+1))
-    kernel = (gkern2(2 * R + 1, 2) * 1e2)
-
-    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
-    while budget > 0:
-        # convolve
-        mat = signal.fftconvolve(wireless, kernel, mode='same')
-
-        found = False
-        while not found:
-            mat_max = mat.max()
-            # pos_pos = mat.argmax()
-            # pos = np.unravel_index(pos_pos, mat.shape)
-            # mat_max = mat[pos]
-
-            if mat_max == -np.inf:
-                pbar.close()
-                print("No more suitable positions left!")
-                return d
-
-            poss = np.argwhere(mat == mat_max).tolist()
-            pos = poss[np.random.randint(0, len(poss))]
-
-            a, b = pos
-
-            if d['graph'][a][b] <= Cell.Wall:
-                mat[a][b] = -np.inf
-            else:
-                found = True
-
-        pbar.update()
-
-        d["graph"][a][b] = Cell.Router
-        d, ret, cost = add_cabel(d, (a, b), budget)
-
-        if ret:
-            budget -= cost
-
-            # refresh wireless map by removing new coverage
-            mask = wireless_access(a, b, d)
-            # w c -c n
-            # 0 0  1 0
-            # 0 1  0 0
-            # 1 1  0 0
-            # 1 0  1 1
-            # wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~mask.astype(np.bool)
-            wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] -= mask.astype(np.int)
-        else:
-            pbar.close()
-            print("No budget available!")
-            break
-
-    pbar.close()
-    return d
 
 
 if __name__ == '__main__':
