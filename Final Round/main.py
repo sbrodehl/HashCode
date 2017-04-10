@@ -39,7 +39,7 @@ else:
 end = time.time()
 
 # write solution
-write_solution(args.output, d)
+write_solution(args.output + "." + args.method, d)
 
 score = compute_solution_score(d)
 tqdm.write("Score {0:.0f} in {1:.2f}s".format(score, (end - start)))
