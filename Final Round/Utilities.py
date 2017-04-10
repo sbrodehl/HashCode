@@ -25,8 +25,8 @@ def compute_solution_score(d):
     # look for cables and routers, compute coverage and cost
     cables = []
     routers = []
-
     g = d['graph']
+
     for x, row in enumerate(g):
         for y, val in enumerate(row):
             if val == Cell.Cable:
@@ -35,16 +35,16 @@ def compute_solution_score(d):
                 routers.append((x, y))
                 cables.append((x, y))
 
-    # budget part of scoring
-    score_cost = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_router'])
+    # calculate score
+    score_budget = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_router'])
     coverage = np.zeros(d['graph'].shape).astype(np.int8)
-    for (a, b) in routers:
+    for (a, b) in tqdm(routers, desc="Calculating score"):
         mask = wireless_access(a, b, d)
         R = d['radius']
         coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
 
-    score = 1000 * np.sum(coverage)
-    return np.floor(score + score_cost)
+    score_coverage = 1000 * np.sum(coverage)
+    return np.floor(score_coverage + score_budget)
 
 
 def wireless_access(a, b, d):
