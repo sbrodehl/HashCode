@@ -83,9 +83,6 @@ def _find_solution_paths(d):
 
 def write_solution(fpath, D):
     # look for cables and routers, find positions and write that stuff
-    cables = []
-    routers = []
-
     cables, routers = _find_solution_paths(D)
 
     with open(fpath, 'w') as writer:
@@ -96,8 +93,6 @@ def write_solution(fpath, D):
         writer.write("%d\n" % len(routers))
         for router in routers:
             writer.write("%d %d\n" % (router[0], router[1]))
-
-        writer.close()
 
 
 if __name__ == '__main__':
