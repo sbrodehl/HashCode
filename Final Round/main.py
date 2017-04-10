@@ -1,3 +1,4 @@
+import os
 import argparse
 import time
 
@@ -38,8 +39,11 @@ else:
 # stop timing
 end = time.time()
 
+# output filepath magic
+fname, fext = os.path.splitext(args.output)
+meth_str = "." + args.method
 # write solution
-write_solution(args.output + "." + args.method, d)
+write_solution(fname + meth_str + fext, d)
 
 score = compute_solution_score(d)
 tqdm.write("Score {0:.0f} in {1:.2f}s".format(score, (end - start)))
@@ -48,6 +52,6 @@ tqdm.write("Score {0:.0f} in {1:.2f}s".format(score, (end - start)))
 pngfile = None
 if args.savefig:
     pngfile = str(args.output)
-    pngfile = pngfile.replace(".out", ".png")
+    pngfile = pngfile.replace(fext, meth_str + ".png")
 
 plot_with_coverage(d, pngfile, args.vis)
