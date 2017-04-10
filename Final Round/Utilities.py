@@ -1,25 +1,11 @@
-import sys
-
-import numpy
 import numpy as np
-from IO import Cell, read_dataset
 from tqdm import tqdm
-
 import matplotlib
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-
-def plot_graph_with_skeleton(d, skel):
-    fig = plt.figure()
-
-    plt.imshow(d['graph'])
-    plt.axis('off')
-    # plt.set_title('original', fontsize=20)
-
-    plt.imshow(skel, cmap=plt.cm.gray, alpha=0.25)
-    plt.show()
+from IO import Cell, read_dataset
 
 
 def compute_solution_score(d):

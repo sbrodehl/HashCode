@@ -249,6 +249,9 @@ def gkern2(kernlen=21, nsig=3):
 def place_routers_conv(d):
     max_num_routers = int(d['budget'] / d['price_router'])
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
+    walls = np.where(d['graph'] == Cell.Wall, 1, 0).astype(np.float64)
+
+    wireless = wireless - 1 * walls
 
     print("Num of routers constrained by:")
     print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
@@ -301,7 +304,7 @@ def place_routers_conv(d):
             # 1 1  0 0
             # 1 0  1 1
             # wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~mask.astype(np.bool)
-            wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] -= kernel
+            wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] -= mask.astype(np.int)
         else:
             pbar.close()
             print("No budget available!")
