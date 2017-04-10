@@ -131,9 +131,7 @@ if __name__ == '__main__':
             a, b = [int(i) for i in f.readline().split(" ")]
             d['graph'][a, b] = Cell.ConnectedRouter
 
-    # print("score %d " % compute_solution_score(d))
-    plot_with_coverage(d)
     print("score %d " % compute_solution_score(d))
-    # pngfile = f_out
-    # pngfile = pngfile.replace(".out", ".png")
-    # plot_with_coverage(d, pngfile, False)
+    pngfile = f_out
+    pngfile = pngfile.replace(".out", ".png")
+    plot_with_coverage(d, pngfile, False)
