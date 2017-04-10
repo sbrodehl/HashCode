@@ -5,7 +5,6 @@ from tqdm import tqdm
 from scipy import signal
 import scipy.ndimage.filters as fi
 
-
 from IO import *
 from Utilities import compute_solution_score, wireless_access
 
@@ -235,15 +234,17 @@ def place_routers_randomized(d):
     pbar.update(max_num_routers)
     return d
 
+
 def gkern2(kernlen=21, nsig=3):
     """Returns a 2D Gaussian kernel array."""
 
     # create nxn zeros
     inp = np.zeros((kernlen, kernlen))
     # set element at the middle to one, a dirac delta
-    inp[kernlen//2, kernlen//2] = 1
+    inp[kernlen // 2, kernlen // 2] = 1
     # gaussian-smooth the dirac, resulting in a gaussian filter mask
     return fi.gaussian_filter(inp, nsig)
+
 
 def place_routers_conv(d):
     max_num_routers = int(d['budget'] / d['price_router'])
@@ -254,9 +255,8 @@ def place_routers_conv(d):
     budget = d['budget']
     R = d['radius']
 
-
     # kernel = np.ones((2*R+1, 2*R+1))
-    kernel = (gkern2(2*R+1, 2) * 1e2)
+    kernel = (gkern2(2 * R + 1, 2) * 1e2)
 
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
     while budget > 0:
@@ -309,7 +309,6 @@ def place_routers_conv(d):
 
     pbar.close()
     return d
-
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ from IO import Cell, read_dataset
 from tqdm import tqdm
 
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -117,6 +118,7 @@ def plot_with_coverage(d, fpath=None, show=False):
 
 if __name__ == '__main__':
     import sys
+
     f_in = sys.argv[1]
     f_out = sys.argv[2]
     d = read_dataset(f_in)
