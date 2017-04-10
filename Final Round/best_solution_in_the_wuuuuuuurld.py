@@ -253,15 +253,13 @@ def place_routers_conv(d):
     R = d['radius']
 
     # kernel = np.ones((2*R+1, 2*R+1))
-    kernel = ((gkern2(2*R+1, 5) * 1e4)**2).astype(np.int32)
+    kernel = gkern2(2*R+1, 3)**2
 
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
     i = 0
     while budget > 0:
         # convolute
-        mat = signal.convolve2d(wireless, kernel, mode='same')
-        # pos = mat.argmax()
-        # pos = np.unravel_index(pos, mat.shape)
+        mat = signal.fftconvolve(wireless, kernel, mode='same')
 
         found = False
         stop = False
@@ -269,6 +267,7 @@ def place_routers_conv(d):
             mat_max = mat.max()
 
             if mat_max == -1:
+                print("No more suitable positions left!")
                 stop = True
                 break
 
