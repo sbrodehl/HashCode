@@ -123,16 +123,20 @@ def place_routers_randomized(d):
 
 def place_routers_by_convolution(d):
     max_num_routers = int(d['budget'] / d['price_router'])
-    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
-    walls = np.where(d['graph'] == Cell.Wall, 1, 0).astype(np.float64)
+    # wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, -1).astype(np.float64)
+    walls = np.where(d['graph'] <= Cell.Wall, 0, 1).astype(np.float64)
 
     print("Num of routers constrained by:")
     print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
     budget = d['budget']
     R = d['radius']
+    r21 = 2 * R + 1
+    stdev = 6.6
 
     # kernel = np.ones((2*R+1, 2*R+1))
-    kernel = (_gkern2(2 * R + 1, 2) * 1e2)
+    # kernel = (_gkern2(2 * R + 1, 2) * 1e2)
+    kernel = (np.outer(signal.gaussian(r21, stdev), signal.gaussian(r21, stdev))).astype(np.float32)
 
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
     while budget > 0:
@@ -175,7 +179,8 @@ def place_routers_by_convolution(d):
             # refresh wireless map by removing new coverage
             # mask = wireless_access(x, y, d)
             # wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~mask.astype(np.bool)
-            wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] -= kernel
+            # wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] -= kernel
+            wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] = -1.0
         else:
             # we've not enough budget
             pbar.close()
