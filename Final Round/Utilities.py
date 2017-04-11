@@ -37,11 +37,12 @@ def compute_solution_score(d):
 def wireless_access(a, b, d):
     g = d["original"]
     r = d["radius"]
-    mask = np.ones((2 * r + 1, 2 * r + 1))
+    mask = np.zeros((2 * r + 1, 2 * r + 1))
     for dw in range(-r, r + 1):
         for dh in range(-r, r + 1):
             # skip router cell
             if dh == 0 and dw == 0:
+                mask[dh + r][dw + r] = 1
                 continue
             # transform coordinates
             x = a + dh
@@ -63,6 +64,8 @@ def wireless_access(a, b, d):
             walls = (rect == Cell.Wall).astype(int)
             if np.sum(walls):
                 mask[dh + r][dw + r] = 0
+            else:
+                mask[dh + r][dw + r] = 1
     return mask
 
 
