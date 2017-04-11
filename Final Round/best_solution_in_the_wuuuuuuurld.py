@@ -265,13 +265,16 @@ def _gkern2(kernlen=21, nsig=3):
 
 if __name__ == '__main__':
     D = read_dataset('input/example.in')
-
-    mask = wireless_access(3, 7, D)
-    # set routers
-    D['graph'][3, 6] = Cell.Router
-    D['graph'][3, 9] = Cell.Router
-
-    D = place_cables(D)
+    budget = D['budget']
+    routers = [(3, 6), (3, 9)]
+    for r in routers:
+        # set routers
+        D['graph'][r[0], r[1]] = Cell.Router
+        D, placed, cost = _add_cabel(D, r, budget)
+        if not placed:
+            print("No budget available!")
+            break
+        budget -= cost
 
     score = compute_solution_score(D)
     print(score)
