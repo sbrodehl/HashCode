@@ -1,6 +1,6 @@
 from collections import deque
 import numpy as np
-
+import os
 
 class Cell:
     Backbone, Void, Wall, Wireless, Router, ConnectedRouter, Cable = range(-2, 5)
@@ -29,6 +29,7 @@ def read_dataset(fpath):
                     matrix[line, col] = Cell.Wireless
 
         return {
+            'name': os.path.basename(fpath),
             'height': H,
             'width': W,
             'radius': R,

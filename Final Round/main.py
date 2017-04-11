@@ -7,6 +7,7 @@ from Utilities import *
 
 avail_methods = [
     'rand',
+    'score',
     'conv',
     'skel'
 ]
@@ -33,6 +34,8 @@ elif args.method == 'conv':
     d = place_routers_by_convolution(d)
 elif args.method == 'skel':
     d = place_routers_on_skeleton_iterative(d)
+elif args.method == 'score':
+    d = place_routers_randomized_by_score(d)
 else:
     raise Exception('No such method!')
 

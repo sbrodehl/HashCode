@@ -4,6 +4,8 @@ from skimage.morphology import skeletonize, medial_axis
 from tqdm import tqdm
 from scipy import signal
 import scipy.ndimage.filters as fi
+import pickle
+import glob
 
 from IO import *
 from Utilities import compute_solution_score, wireless_access
@@ -186,6 +188,100 @@ def place_routers_by_convolution(d):
             pbar.close()
             print("No budget available!")
             return d
+
+    pbar.close()
+    return d
+
+
+def place_routers_randomized_by_score(d):
+    # some constants
+    max_num_routers = int(d['budget'] / d['price_router'])
+    budget = d['budget']
+    R = d['radius']
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.int8)
+    scoring = np.zeros_like(wireless) - 1
+    coverage = {}
+
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % max_num_routers)
+
+    fscore = d['name'] + ".scores"
+    fcov = d['name'] + ".coverage"
+
+    compute_stuff = False
+    # load sampled points from disk or sample new points
+    sample_files = glob.glob('output/' + fscore)
+    if len(sample_files):
+        print("Found scoring file.")
+        with open(sample_files[0], 'rb') as outfile:
+            scoring = pickle.load(outfile)
+    else:
+        compute_stuff = True
+
+    sample_files = glob.glob('output/' + fcov)
+    if len(sample_files):
+        print("Found coverage file.")
+        with open(sample_files[0], 'rb') as outfile:
+            coverage = pickle.load(outfile)
+    else:
+        compute_stuff = True
+
+    if compute_stuff:
+        # compute initial scoring, which will be updated during placing
+        positions = np.argwhere(wireless > 0).tolist()
+        for p in tqdm(positions, desc="Computing Scores"):
+            a, b = p
+            mask = wireless_access(a, b, d)
+            coverage[(a, b)] = mask
+            scoring[a][b] = np.sum(mask)
+        print("Saving scoring file.")
+        # save scoring to disk
+        with open('output/' + fscore, 'wb') as outfile:
+            pickle.dump(scoring, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        # save coverage to disk
+        with open('output/' + fcov, 'wb') as outfile:
+            pickle.dump(coverage, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # choose routers by score and place them!
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    while budget > 0:
+        placement = None
+        max_score = scoring.max()
+        if max_score > 0:
+            possible_placements = np.argwhere(scoring == max_score).tolist()
+            shuffle(possible_placements)
+            placement = next(iter(possible_placements or []), None)
+
+        if placement is None:
+            print("No positions available!")
+            break
+
+        # update progress bar
+        pbar.update()
+
+        x, y = placement
+
+        # modify graph, add router and cables
+        d["graph"][x][y] = Cell.Router
+        d, placed, cost = _add_cabel(d, (x, y), budget)
+
+        # check if new path is not to expensive
+        if not placed:
+            print("No budget available!")
+            break
+
+        # update budget
+        budget -= cost
+
+        # prepare coverage and scoring for next round
+        # remove score from current router
+        scoring[x][y] = -1
+        positions = np.argwhere(coverage[(x, y)]).tolist()
+        for p in tqdm(positions, desc="Reevaluating Scores"):
+            a, b = p
+            a, b = a + x - R, b + y - R
+            mask = wireless_access(a, b, d)
+            scoring[a][b] = np.sum(mask)
 
     pbar.close()
     return d
