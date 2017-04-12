@@ -47,7 +47,7 @@ _`160,103,086`_ points.
 ![Opera](output/opera.conv.png)
 
 #### Rue de Londres
-_`54,819,010`_ points.
+_`55,666,019`_ points.
 
 ![Rue de Londres](output/rue_de_londres.conv.png)
 
