@@ -25,19 +25,29 @@ def compute_solution_score(d):
     # calculate score
     score_budget = d['budget'] - (len(cables) * d['price_backbone'] + len(routers) * d['price_router'])
     coverage = np.zeros(d['graph'].shape).astype(np.int8)
+    R = d['radius']
     for (a, b) in tqdm(routers, desc="Calculating score"):
         mask = wireless_access(a, b, d)
-        R = d['radius']
-        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
+        wx_min, wx_max = np.max([0, (a - R)]), np.min([coverage.shape[0], (a + R + 1)])
+        wy_min, wy_max = np.max([0, (b - R)]), np.min([coverage.shape[1], (b + R + 1)])
+        # get the submask which is valid
+        dx, lx = np.abs(wx_min - (a - R)), wx_max - wx_min
+        dy, ly = np.abs(wy_min - (b - R)), wy_max - wy_min
+        coverage[wx_min:wx_max, wy_min:wy_max] |= mask[dx:dx + lx, dy:dy + ly].astype(np.bool)
 
     score_coverage = 1000 * np.sum(coverage)
     return np.floor(score_coverage + score_budget)
 
 
-def wireless_access(a, b, d):
-    g = d["original"]
+def wireless_access(a, b, d, wireless=None):
+    if wireless is None:
+        g = d["original"]
+    else:
+        g = wireless
     r = d["radius"]
-    mask = np.zeros((2 * r + 1, 2 * r + 1))
+
+    mask = np.empty((2 * r + 1, 2 * r + 1))
+    mask[:] = np.NaN
     for dw in range(-r, r + 1):
         for dh in range(-r, r + 1):
             # skip router cell
@@ -94,7 +104,12 @@ def plot_with_coverage(d, fpath=None, show=False):
     for r in range(len(routers)):
         a, b = routers[r]
         mask = wireless_access(a, b, d)
-        coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] |= mask.astype(np.bool)
+        wx_min, wx_max = np.max([0, (a - R)]), np.min([coverage.shape[0], (a + R + 1)])
+        wy_min, wy_max = np.max([0, (b - R)]), np.min([coverage.shape[1], (b + R + 1)])
+        # get the submask which is valid
+        dx, lx = np.abs(wx_min - (a - R)), wx_max - wx_min
+        dy, ly = np.abs(wy_min - (b - R)), wy_max - wy_min
+        coverage[wx_min:wx_max, wy_min:wy_max] |= mask[dx:dx + lx, dy:dy + ly].astype(np.bool)
 
     ax.imshow(coverage, cmap=plt.cm.gray, alpha=0.2, extent=(0, 1, 0, 1), aspect='auto', interpolation='none')
 

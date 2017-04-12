@@ -199,7 +199,7 @@ def place_routers_randomized_by_score(d):
     budget = d['budget']
     R = d['radius']
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.int8)
-    scoring = np.zeros_like(wireless) - 1
+    scoring = np.zeros(wireless.shape, dtype=np.float32) - 1
     coverage = {}
 
     print("Num of routers constrained by:")
@@ -233,7 +233,7 @@ def place_routers_randomized_by_score(d):
             a, b = p
             mask = wireless_access(a, b, d)
             coverage[(a, b)] = mask
-            scoring[a][b] = np.sum(mask)
+            scoring[a][b] = np.sum(np.nan_to_num(mask))
         print("Saving scoring file.")
         # save scoring to disk
         with open('output/' + fscore, 'wb') as outfile:
@@ -274,14 +274,31 @@ def place_routers_randomized_by_score(d):
         budget -= cost
 
         # prepare coverage and scoring for next round
-        # remove score from current router
-        scoring[x][y] = -1
-        positions = np.argwhere(coverage[(x, y)]).tolist()
-        for p in tqdm(positions, desc="Reevaluating Scores"):
+        # remove score for current router
+
+        wx_min, wx_max = np.max([0, (x - R)]), np.min([wireless.shape[0], (x + R + 1)])
+        wy_min, wy_max = np.max([0, (y - R)]), np.min([wireless.shape[1], (y + R + 1)])
+        # get the submask which is valid
+        dx, lx = np.abs(wx_min - (x - R)), wx_max - wx_min
+        dy, ly = np.abs(wy_min - (y - R)), wy_max - wy_min
+
+        # remove coverage from map
+        wireless[wx_min:wx_max, wy_min:wy_max] &= ~(coverage[(x, y)][dx:dx + lx, dy:dy + ly].astype(np.bool))
+        # nullify scores
+        scoring[wx_min:wx_max, wy_min:wy_max] = -1
+
+        ux_min, uy_min = np.max([0, (x - 2*R)]), np.max([0, (y - 2*R)])
+        ux_max, uy_max = np.min([wireless.shape[0], (x + 2*R + 1)]), np.min([wireless.shape[1], (y + 2*R + 1)])
+        # compute places to be updated
+        updating = wireless[ux_min:ux_max, uy_min:uy_max]
+
+        # get all position coordinates
+        positions = np.argwhere(updating).tolist()
+        for p in positions:
             a, b = p
-            a, b = a + x - R, b + y - R
-            mask = wireless_access(a, b, d)
-            scoring[a][b] = np.sum(mask)
+            a, b = a + ux_min, b + uy_min
+            mask = wireless_access(a, b, d, wireless)
+            scoring[a][b] = np.sum(np.nan_to_num(mask))
 
     pbar.close()
     return d
