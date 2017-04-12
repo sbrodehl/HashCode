@@ -6,6 +6,7 @@ from scipy import signal
 import scipy.ndimage.filters as fi
 import pickle
 import glob
+import bz2
 
 from IO import *
 from Utilities import compute_solution_score, wireless_access
@@ -213,16 +214,14 @@ def place_routers_randomized_by_score(d):
     sample_files = glob.glob('output/' + fscore)
     if len(sample_files):
         print("Found scoring file.")
-        with open(sample_files[0], 'rb') as outfile:
-            scoring = pickle.load(outfile)
+        scoring = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
     else:
         compute_stuff = True
 
     sample_files = glob.glob('output/' + fcov)
     if len(sample_files):
         print("Found coverage file.")
-        with open(sample_files[0], 'rb') as outfile:
-            coverage = pickle.load(outfile)
+        coverage = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
     else:
         compute_stuff = True
 
@@ -236,11 +235,10 @@ def place_routers_randomized_by_score(d):
             scoring[a][b] = np.sum(np.nan_to_num(mask))
         print("Saving scoring file.")
         # save scoring to disk
-        with open('output/' + fscore, 'wb') as outfile:
-            pickle.dump(scoring, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(scoring, bz2.BZ2File('output/' + fscore, 'w'), pickle.HIGHEST_PROTOCOL)
+        print("Saving coverage file.")
         # save coverage to disk
-        with open('output/' + fcov, 'wb') as outfile:
-            pickle.dump(coverage, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(coverage, bz2.BZ2File('output/' + fcov, 'w'), pickle.HIGHEST_PROTOCOL)
 
     # choose routers by score and place them!
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
