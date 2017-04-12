@@ -131,7 +131,7 @@ def _parallel_helper(position, offset, radius, graph):
     ux_min, uy_min = offset
     a, b = a + ux_min, b + uy_min
     mask = wireless_access(a, b, radius, graph)
-    return position[0], position[1], np.sum(np.nan_to_num(mask))
+    return position[0], position[1], np.sum(np.nan_to_num(mask)), mask
 
 
 def place_routers_randomized_by_score(d):
@@ -168,11 +168,11 @@ def place_routers_randomized_by_score(d):
     if compute_stuff:
         # compute initial scoring, which will be updated during placing
         positions = np.argwhere(wireless > 0).tolist()
-        for p in tqdm(positions, desc="Computing Scores"):
-            a, b = p
-            mask = wireless_access(a, b, R, d['original'])
-            coverage[(a, b)] = mask
-            scoring[a][b] = np.sum(np.nan_to_num(mask))
+        # start worker processes
+        with Pool(processes=multiprocessing.cpu_count()) as pool:
+            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, offset=(0, 0), radius=R, graph=d['original']), positions):
+                scoring[a][b] = s
+                coverage[(a, b)] = m
         print("Saving scoring file.")
         # save scoring to disk
         pickle.dump(scoring, bz2.BZ2File('output/' + fscore, 'w'), pickle.HIGHEST_PROTOCOL)
@@ -234,7 +234,7 @@ def place_routers_randomized_by_score(d):
         positions = np.argwhere(updating).tolist()
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s in pool.imap_unordered(partial(_parallel_helper, offset=(ux_min, uy_min), radius=R, graph=wireless), positions):
+            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, offset=(ux_min, uy_min), radius=R, graph=wireless), positions):
                 scoring[a][b] = s
 
     pbar.close()
