@@ -97,7 +97,7 @@ def plot_with_coverage(d, fpath=None, show=False):
     R = d['radius']
     for r in range(len(routers)):
         a, b = routers[r]
-        mask = wireless_access(a, b, d)
+        mask = wireless_access(a, b, R, d['original'])
         wx_min, wx_max = np.max([0, (a - R)]), np.min([coverage.shape[0], (a + R + 1)])
         wy_min, wy_max = np.max([0, (b - R)]), np.min([coverage.shape[1], (b + R + 1)])
         # get the submask which is valid
