@@ -13,7 +13,7 @@ def compute_solution_score(d):
     cables = []
     routers = []
     g = d['graph']
-
+    original = d['original']
     for x, row in enumerate(g):
         for y, val in enumerate(row):
             if val == Cell.Cable:
@@ -27,7 +27,7 @@ def compute_solution_score(d):
     coverage = np.zeros(d['graph'].shape).astype(np.int8)
     R = d['radius']
     for (a, b) in tqdm(routers, desc="Calculating score"):
-        mask = wireless_access(a, b, d)
+        mask = wireless_access(a, b, R, original)
         wx_min, wx_max = np.max([0, (a - R)]), np.min([coverage.shape[0], (a + R + 1)])
         wy_min, wy_max = np.max([0, (b - R)]), np.min([coverage.shape[1], (b + R + 1)])
         # get the submask which is valid
@@ -39,13 +39,7 @@ def compute_solution_score(d):
     return np.floor(score_coverage + score_budget)
 
 
-def wireless_access(a, b, d, wireless=None):
-    if wireless is None:
-        g = d["original"]
-    else:
-        g = wireless
-    r = d["radius"]
-
+def wireless_access(a, b, r, g):
     mask = np.empty((2 * r + 1, 2 * r + 1))
     mask[:] = np.NaN
     for dw in range(-r, r + 1):
@@ -58,9 +52,9 @@ def wireless_access(a, b, d, wireless=None):
             x = a + dh
             y = b + dw
             # checking bounds
-            if x not in range(0, d["height"]):
+            if x not in range(0, g.shape[0]):
                 continue
-            if y not in range(0, d["width"]):
+            if y not in range(0, g.shape[1]):
                 continue
             # if this is a wireless cell
             if not g[x][y] == Cell.Wireless:

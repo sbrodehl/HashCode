@@ -7,7 +7,9 @@ import scipy.ndimage.filters as fi
 import pickle
 import glob
 import bz2
-
+import multiprocessing
+from multiprocessing import Pool
+from functools import partial
 from IO import *
 from Utilities import compute_solution_score, wireless_access
 
@@ -124,6 +126,121 @@ def place_routers_randomized(d):
     return d
 
 
+def _parallel_helper(position, offset, radius, graph):
+    a, b = position
+    ux_min, uy_min = offset
+    a, b = a + ux_min, b + uy_min
+    mask = wireless_access(a, b, radius, graph)
+    return position[0], position[1], np.sum(np.nan_to_num(mask))
+
+
+def place_routers_randomized_by_score(d):
+    # some constants
+    max_num_routers = int(d['budget'] / d['price_router'])
+    budget = d['budget']
+    R = d['radius']
+    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.int8)
+    scoring = np.zeros(wireless.shape, dtype=np.float32) - 1
+    coverage = {}
+
+    print("Num of routers constrained by:")
+    print(" budget:   %d" % max_num_routers)
+
+    fscore = d['name'] + ".scores"
+    fcov = d['name'] + ".coverage"
+
+    compute_stuff = False
+    # load sampled points from disk or sample new points
+    sample_files = glob.glob('output/' + fscore)
+    if len(sample_files):
+        print("Found scoring file.")
+        scoring = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
+    else:
+        compute_stuff = True
+
+    sample_files = glob.glob('output/' + fcov)
+    if len(sample_files):
+        print("Found coverage file.")
+        coverage = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
+    else:
+        compute_stuff = True
+
+    if compute_stuff:
+        # compute initial scoring, which will be updated during placing
+        positions = np.argwhere(wireless > 0).tolist()
+        for p in tqdm(positions, desc="Computing Scores"):
+            a, b = p
+            mask = wireless_access(a, b, R, d['original'])
+            coverage[(a, b)] = mask
+            scoring[a][b] = np.sum(np.nan_to_num(mask))
+        print("Saving scoring file.")
+        # save scoring to disk
+        pickle.dump(scoring, bz2.BZ2File('output/' + fscore, 'w'), pickle.HIGHEST_PROTOCOL)
+        print("Saving coverage file.")
+        # save coverage to disk
+        pickle.dump(coverage, bz2.BZ2File('output/' + fcov, 'w'), pickle.HIGHEST_PROTOCOL)
+
+    # choose routers by score and place them!
+    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
+    while budget > 0:
+        placement = None
+        max_score = scoring.max()
+        if max_score > 0:
+            possible_placements = np.argwhere(scoring == max_score).tolist()
+            shuffle(possible_placements)
+            placement = next(iter(possible_placements or []), None)
+
+        if placement is None:
+            print("No positions available!")
+            break
+
+        # update progress bar
+        pbar.update()
+
+        x, y = placement
+
+        # modify graph, add router and cables
+        d["graph"][x][y] = Cell.Router
+        d, placed, cost = _add_cabel(d, (x, y), budget)
+
+        # check if new path is not to expensive
+        if not placed:
+            print("No budget available!")
+            break
+
+        # update budget
+        budget -= cost
+
+        # prepare coverage and scoring for next round
+        # remove score for current router
+
+        wx_min, wx_max = np.max([0, (x - R)]), np.min([wireless.shape[0], (x + R + 1)])
+        wy_min, wy_max = np.max([0, (y - R)]), np.min([wireless.shape[1], (y + R + 1)])
+        # get the submask which is valid
+        dx, lx = np.abs(wx_min - (x - R)), wx_max - wx_min
+        dy, ly = np.abs(wy_min - (y - R)), wy_max - wy_min
+
+        # remove coverage from map
+        wireless[wx_min:wx_max, wy_min:wy_max] &= ~(coverage[(x, y)][dx:dx + lx, dy:dy + ly].astype(np.bool))
+        # nullify scores
+        scoring[wx_min:wx_max, wy_min:wy_max] = -1
+
+        ux_min, uy_min = np.max([0, (x - 2*R)]), np.max([0, (y - 2*R)])
+        ux_max, uy_max = np.min([wireless.shape[0], (x + 2*R + 1)]), np.min([wireless.shape[1], (y + 2*R + 1)])
+        # compute places to be updated
+        updating = wireless[ux_min:ux_max, uy_min:uy_max]
+
+        # get all position coordinates
+        positions = np.argwhere(updating).tolist()
+        # start worker processes
+        with Pool(processes=multiprocessing.cpu_count()) as pool:
+            for a, b, s in pool.imap_unordered(partial(_parallel_helper, offset=(ux_min, uy_min), radius=R, graph=wireless), positions):
+                scoring[a][b] = s
+
+    pbar.close()
+    return d
+
+
 def place_routers_by_convolution(d):
     max_num_routers = int(d['budget'] / d['price_router'])
     # wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
@@ -189,114 +306,6 @@ def place_routers_by_convolution(d):
             pbar.close()
             print("No budget available!")
             return d
-
-    pbar.close()
-    return d
-
-
-def place_routers_randomized_by_score(d):
-    # some constants
-    max_num_routers = int(d['budget'] / d['price_router'])
-    budget = d['budget']
-    R = d['radius']
-    wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.int8)
-    scoring = np.zeros(wireless.shape, dtype=np.float32) - 1
-    coverage = {}
-
-    print("Num of routers constrained by:")
-    print(" budget:   %d" % max_num_routers)
-
-    fscore = d['name'] + ".scores"
-    fcov = d['name'] + ".coverage"
-
-    compute_stuff = False
-    # load sampled points from disk or sample new points
-    sample_files = glob.glob('output/' + fscore)
-    if len(sample_files):
-        print("Found scoring file.")
-        scoring = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
-    else:
-        compute_stuff = True
-
-    sample_files = glob.glob('output/' + fcov)
-    if len(sample_files):
-        print("Found coverage file.")
-        coverage = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
-    else:
-        compute_stuff = True
-
-    if compute_stuff:
-        # compute initial scoring, which will be updated during placing
-        positions = np.argwhere(wireless > 0).tolist()
-        for p in tqdm(positions, desc="Computing Scores"):
-            a, b = p
-            mask = wireless_access(a, b, d)
-            coverage[(a, b)] = mask
-            scoring[a][b] = np.sum(np.nan_to_num(mask))
-        print("Saving scoring file.")
-        # save scoring to disk
-        pickle.dump(scoring, bz2.BZ2File('output/' + fscore, 'w'), pickle.HIGHEST_PROTOCOL)
-        print("Saving coverage file.")
-        # save coverage to disk
-        pickle.dump(coverage, bz2.BZ2File('output/' + fcov, 'w'), pickle.HIGHEST_PROTOCOL)
-
-    # choose routers by score and place them!
-    pbar = tqdm(range(max_num_routers), desc="Placing Routers")
-    while budget > 0:
-        placement = None
-        max_score = scoring.max()
-        if max_score > 0:
-            possible_placements = np.argwhere(scoring == max_score).tolist()
-            shuffle(possible_placements)
-            placement = next(iter(possible_placements or []), None)
-
-        if placement is None:
-            print("No positions available!")
-            break
-
-        # update progress bar
-        pbar.update()
-
-        x, y = placement
-
-        # modify graph, add router and cables
-        d["graph"][x][y] = Cell.Router
-        d, placed, cost = _add_cabel(d, (x, y), budget)
-
-        # check if new path is not to expensive
-        if not placed:
-            print("No budget available!")
-            break
-
-        # update budget
-        budget -= cost
-
-        # prepare coverage and scoring for next round
-        # remove score for current router
-
-        wx_min, wx_max = np.max([0, (x - R)]), np.min([wireless.shape[0], (x + R + 1)])
-        wy_min, wy_max = np.max([0, (y - R)]), np.min([wireless.shape[1], (y + R + 1)])
-        # get the submask which is valid
-        dx, lx = np.abs(wx_min - (x - R)), wx_max - wx_min
-        dy, ly = np.abs(wy_min - (y - R)), wy_max - wy_min
-
-        # remove coverage from map
-        wireless[wx_min:wx_max, wy_min:wy_max] &= ~(coverage[(x, y)][dx:dx + lx, dy:dy + ly].astype(np.bool))
-        # nullify scores
-        scoring[wx_min:wx_max, wy_min:wy_max] = -1
-
-        ux_min, uy_min = np.max([0, (x - 2*R)]), np.max([0, (y - 2*R)])
-        ux_max, uy_max = np.min([wireless.shape[0], (x + 2*R + 1)]), np.min([wireless.shape[1], (y + 2*R + 1)])
-        # compute places to be updated
-        updating = wireless[ux_min:ux_max, uy_min:uy_max]
-
-        # get all position coordinates
-        positions = np.argwhere(updating).tolist()
-        for p in positions:
-            a, b = p
-            a, b = a + ux_min, b + uy_min
-            mask = wireless_access(a, b, d, wireless)
-            scoring[a][b] = np.sum(np.nan_to_num(mask))
 
     pbar.close()
     return d
