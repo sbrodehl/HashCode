@@ -141,6 +141,7 @@ def place_routers_randomized_by_score(d):
     R = d['radius']
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.int8)
     scoring = np.zeros(wireless.shape, dtype=np.float32) - 1
+    counting = np.zeros_like(scoring)
     coverage = {}
 
     print("Num of routers constrained by:")
@@ -148,6 +149,7 @@ def place_routers_randomized_by_score(d):
 
     fscore = d['name'] + ".scores"
     fcov = d['name'] + ".coverage"
+    facc = d['name'] + ".counting"
 
     compute_stuff = False
     # load sampled points from disk or sample new points
@@ -165,6 +167,13 @@ def place_routers_randomized_by_score(d):
     else:
         compute_stuff = True
 
+    sample_files = glob.glob('output/' + facc)
+    if len(sample_files):
+        print("Found accounting file.")
+        counting = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
+    else:
+        compute_stuff = True
+
     if compute_stuff:
         # compute initial scoring, which will be updated during placing
         positions = np.argwhere(wireless > 0).tolist()
@@ -173,12 +182,26 @@ def place_routers_randomized_by_score(d):
             for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, offset=(0, 0), radius=R, graph=d['original']), positions):
                 scoring[a][b] = s
                 coverage[(a, b)] = m
+
+        for p in tqdm(positions, desc="Computing Scores"):
+            a, b = p
+            wx_min, wx_max = np.max([0, (a - R)]), np.min([counting.shape[0], (a + R + 1)])
+            wy_min, wy_max = np.max([0, (b - R)]), np.min([counting.shape[1], (b + R + 1)])
+            # get the submask which is valid
+            dx, lx = np.abs(wx_min - (a - R)), wx_max - wx_min
+            dy, ly = np.abs(wy_min - (b - R)), wy_max - wy_min
+            # remove coverage from map
+            counting[a][b] = np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(coverage[(a, b)][dx:dx + lx, dy:dy + ly])))
+
         print("Saving scoring file.")
         # save scoring to disk
         pickle.dump(scoring, bz2.BZ2File('output/' + fscore, 'w'), pickle.HIGHEST_PROTOCOL)
         print("Saving coverage file.")
         # save coverage to disk
         pickle.dump(coverage, bz2.BZ2File('output/' + fcov, 'w'), pickle.HIGHEST_PROTOCOL)
+        print("Saving counting file.")
+        # save coverage to disk
+        pickle.dump(counting, bz2.BZ2File('output/' + facc, 'w'), pickle.HIGHEST_PROTOCOL)
 
     # choose routers by score and place them!
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
@@ -187,8 +210,12 @@ def place_routers_randomized_by_score(d):
         max_score = scoring.max()
         if max_score > 0:
             possible_placements = np.argwhere(scoring == max_score).tolist()
-            shuffle(possible_placements)
-            placement = next(iter(possible_placements or []), None)
+            # shuffle(possible_placements)
+            score_count = {}
+            for pp in possible_placements:
+                score_count[(pp[0], pp[1])] = counting[pp[0]][pp[1]]
+            sorted_scores = sorted(score_count)
+            placement = next(iter(sorted_scores or []), None)
 
         if placement is None:
             print("No positions available!")
