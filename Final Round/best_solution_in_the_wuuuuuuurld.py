@@ -51,6 +51,7 @@ def place_routers_on_skeleton(d):
 
     return d
 
+
 def place_routers_on_skeleton_iterative(d):
     budget = d['budget']
     R = d['radius']
@@ -132,6 +133,20 @@ def _parallel_helper(position, offset, radius, graph):
     a, b = a + ux_min, b + uy_min
     mask = wireless_access(a, b, radius, graph)
     return position[0], position[1], np.sum(np.nan_to_num(mask)), mask
+
+
+def _parallel_scoring_helper(position, offset, radius, scoring, coverage):
+    a, b = position
+    ux_min, uy_min = offset
+    a, b = a + ux_min, b + uy_min
+
+    wx_min, wx_max = np.max([0, (a - radius)]), np.min([scoring.shape[0], (a + radius + 1)])
+    wy_min, wy_max = np.max([0, (b - radius)]), np.min([scoring.shape[1], (b + radius + 1)])
+    # get the submask which is valid
+    dx, lx = np.abs(wx_min - (a - radius)), wx_max - wx_min
+    dy, ly = np.abs(wy_min - (b - radius)), wy_max - wy_min
+
+    return position[0], position[1], np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(coverage[(a, b)][dx:dx + lx, dy:dy + ly])))
 
 
 def place_routers_randomized_by_score(d):
@@ -263,6 +278,10 @@ def place_routers_randomized_by_score(d):
         with Pool(processes=multiprocessing.cpu_count()) as pool:
             for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, offset=(ux_min, uy_min), radius=R, graph=wireless), positions):
                 scoring[a][b] = s
+        # start worker processes
+        with Pool(processes=multiprocessing.cpu_count()) as pool:
+            for a, b, s in pool.imap_unordered(partial(_parallel_scoring_helper, offset=(ux_min, uy_min), radius=R, scoring=scoring, coverage=coverage), positions):
+                counting[a][b] = s
 
     pbar.close()
     return d
