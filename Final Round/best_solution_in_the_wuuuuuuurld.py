@@ -132,7 +132,7 @@ def _parallel_helper(position, radius, graph, offset=(0, 0)):
     ux_min, uy_min = offset
     a, b = a + ux_min, b + uy_min
     mask = wireless_access(a, b, radius, graph)
-    return position[0], position[1], np.sum(np.nan_to_num(mask)), mask
+    return a, b, np.sum(np.nan_to_num(mask)), mask
 
 
 def _parallel_counting_helper(position, radius, graph, scoring, offset=(0, 0)):
@@ -148,7 +148,7 @@ def _parallel_counting_helper(position, radius, graph, scoring, offset=(0, 0)):
     dx, lx = np.abs(wx_min - (a - radius)), wx_max - wx_min
     dy, ly = np.abs(wy_min - (b - radius)), wy_max - wy_min
 
-    return position[0], position[1], np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(mask[dx:dx + lx, dy:dy + ly])))
+    return a, b, np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(mask[dx:dx + lx, dy:dy + ly])))
 
 
 def place_routers_randomized_by_score(d):
