@@ -221,7 +221,6 @@ def place_routers_randomized_by_score(d):
         max_score = scoring.max()
         if max_score > 0:
             possible_placements = np.argwhere(scoring == max_score).tolist()
-            # shuffle(possible_placements)
             score_count = {}
             for pp in possible_placements:
                 score_count[(pp[0], pp[1])] = counting[pp[0]][pp[1]]
@@ -278,6 +277,8 @@ def place_routers_randomized_by_score(d):
         with Pool(processes=multiprocessing.cpu_count()) as pool:
             for a, b, s in pool.imap_unordered(partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring, offset=(ux_min, uy_min)), positions):
                 counting[a][b] = s
+
+        counting = np.multiply(counting, wireless)
 
     pbar.close()
     return d
