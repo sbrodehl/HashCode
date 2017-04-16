@@ -127,7 +127,7 @@ def place_routers_randomized(d):
     return d
 
 
-def _parallel_helper(position, offset, radius, graph):
+def _parallel_helper(position, radius, graph, offset=(0, 0)):
     a, b = position
     ux_min, uy_min = offset
     a, b = a + ux_min, b + uy_min
@@ -135,10 +135,12 @@ def _parallel_helper(position, offset, radius, graph):
     return position[0], position[1], np.sum(np.nan_to_num(mask)), mask
 
 
-def _parallel_scoring_helper(position, offset, radius, scoring, coverage):
+def _parallel_counting_helper(position, radius, graph, scoring, offset=(0, 0)):
     a, b = position
     ux_min, uy_min = offset
     a, b = a + ux_min, b + uy_min
+
+    mask = wireless_access(a, b, radius, graph)
 
     wx_min, wx_max = np.max([0, (a - radius)]), np.min([scoring.shape[0], (a + radius + 1)])
     wy_min, wy_max = np.max([0, (b - radius)]), np.min([scoring.shape[1], (b + radius + 1)])
@@ -146,7 +148,7 @@ def _parallel_scoring_helper(position, offset, radius, scoring, coverage):
     dx, lx = np.abs(wx_min - (a - radius)), wx_max - wx_min
     dy, ly = np.abs(wy_min - (b - radius)), wy_max - wy_min
 
-    return position[0], position[1], np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(coverage[(a, b)][dx:dx + lx, dy:dy + ly])))
+    return position[0], position[1], np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(mask[dx:dx + lx, dy:dy + ly])))
 
 
 def place_routers_randomized_by_score(d):
@@ -167,25 +169,25 @@ def place_routers_randomized_by_score(d):
     facc = d['name'] + ".counting"
 
     compute_stuff = False
-    # load sampled points from disk or sample new points
+
+    sample_files = glob.glob('output/' + facc)
+    if len(sample_files) and not compute_stuff:
+        print("Found accounting file.")
+        counting = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
+    else:
+        compute_stuff = True
+
     sample_files = glob.glob('output/' + fscore)
-    if len(sample_files):
+    if len(sample_files) and not compute_stuff:
         print("Found scoring file.")
         scoring = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
     else:
         compute_stuff = True
 
     sample_files = glob.glob('output/' + fcov)
-    if len(sample_files):
+    if len(sample_files) and not compute_stuff:
         print("Found coverage file.")
         coverage = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
-    else:
-        compute_stuff = True
-
-    sample_files = glob.glob('output/' + facc)
-    if len(sample_files):
-        print("Found accounting file.")
-        counting = pickle.load(bz2.BZ2File(sample_files[0], 'r'))
     else:
         compute_stuff = True
 
@@ -194,19 +196,13 @@ def place_routers_randomized_by_score(d):
         positions = np.argwhere(wireless > 0).tolist()
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, offset=(0, 0), radius=R, graph=d['original']), positions):
+            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, radius=R, graph=d['original']), positions):
                 scoring[a][b] = s
                 coverage[(a, b)] = m
-
-        for p in tqdm(positions, desc="Computing Scores"):
-            a, b = p
-            wx_min, wx_max = np.max([0, (a - R)]), np.min([counting.shape[0], (a + R + 1)])
-            wy_min, wy_max = np.max([0, (b - R)]), np.min([counting.shape[1], (b + R + 1)])
-            # get the submask which is valid
-            dx, lx = np.abs(wx_min - (a - R)), wx_max - wx_min
-            dy, ly = np.abs(wy_min - (b - R)), wy_max - wy_min
-            # remove coverage from map
-            counting[a][b] = np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(coverage[(a, b)][dx:dx + lx, dy:dy + ly])))
+        # start worker processes
+        with Pool(processes=multiprocessing.cpu_count()) as pool:
+            for a, b, s in pool.imap_unordered(partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring), positions):
+                counting[a][b] = s
 
         print("Saving scoring file.")
         # save scoring to disk
@@ -276,11 +272,11 @@ def place_routers_randomized_by_score(d):
         positions = np.argwhere(updating).tolist()
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, offset=(ux_min, uy_min), radius=R, graph=wireless), positions):
+            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, radius=R, graph=wireless, offset=(ux_min, uy_min)), positions):
                 scoring[a][b] = s
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s in pool.imap_unordered(partial(_parallel_scoring_helper, offset=(ux_min, uy_min), radius=R, scoring=scoring, coverage=coverage), positions):
+            for a, b, s in pool.imap_unordered(partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring, offset=(ux_min, uy_min)), positions):
                 counting[a][b] = s
 
     pbar.close()
