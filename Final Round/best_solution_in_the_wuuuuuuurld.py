@@ -79,7 +79,7 @@ def place_routers_on_skeleton_iterative(d):
             break
         budget -= cost
         # refresh wireless map by removing new coverage
-        m = wireless_access(a, b, d).astype(np.bool)
+        m = wireless_access(a, b, R, d['graph']).astype(np.bool)
         coverage[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~m
         pbar.update()
     pbar.close()
@@ -115,7 +115,7 @@ def place_routers_randomized(d):
             budget -= cost
 
             # refresh wireless map by removing new coverage
-            mask = wireless_access(x, y, d)
+            mask = wireless_access(x, y, R, d['graph'])
             wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
         else:
             # no more budget left
@@ -201,7 +201,8 @@ def place_routers_randomized_by_score(d):
                 coverage[(a, b)] = m
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s in pool.imap_unordered(partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring), positions):
+            for a, b, s in pool.imap_unordered(
+                    partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring), positions):
                 counting[a][b] = s
 
         print("Saving scoring file.")
@@ -262,8 +263,8 @@ def place_routers_randomized_by_score(d):
         # nullify scores
         scoring[wx_min:wx_max, wy_min:wy_max] = -1
 
-        ux_min, uy_min = np.max([0, (x - 2*R)]), np.max([0, (y - 2*R)])
-        ux_max, uy_max = np.min([wireless.shape[0], (x + 2*R + 1)]), np.min([wireless.shape[1], (y + 2*R + 1)])
+        ux_min, uy_min = np.max([0, (x - 2 * R)]), np.max([0, (y - 2 * R)])
+        ux_max, uy_max = np.min([wireless.shape[0], (x + 2 * R + 1)]), np.min([wireless.shape[1], (y + 2 * R + 1)])
         # compute places to be updated
         updating = wireless[ux_min:ux_max, uy_min:uy_max]
 
@@ -271,11 +272,14 @@ def place_routers_randomized_by_score(d):
         positions = np.argwhere(updating).tolist()
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s, m in pool.imap_unordered(partial(_parallel_helper, radius=R, graph=wireless, offset=(ux_min, uy_min)), positions):
+            for a, b, s, m in pool.imap_unordered(
+                    partial(_parallel_helper, radius=R, graph=wireless, offset=(ux_min, uy_min)), positions):
                 scoring[a][b] = s
         # start worker processes
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            for a, b, s in pool.imap_unordered(partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring, offset=(ux_min, uy_min)), positions):
+            for a, b, s in pool.imap_unordered(
+                    partial(_parallel_counting_helper, radius=R, graph=wireless, scoring=scoring,
+                            offset=(ux_min, uy_min)), positions):
                 counting[a][b] = s
 
         counting = np.multiply(counting, wireless)
@@ -323,7 +327,7 @@ def place_routers_by_convolution(d):
 
             # max can be on a wall position... ignore it
             if d['graph'][x][y] <= Cell.Wall:
-                pbar.write('> Optimal position on wall cell...')
+                # pbar.write('> Optimal position on wall cell...')
                 mat[x][y] = -np.inf
             else:
                 found = True
@@ -340,7 +344,7 @@ def place_routers_by_convolution(d):
             budget -= cost
 
             # refresh wireless map by removing new coverage
-            # mask = wireless_access(x, y, d)
+            mask = wireless_access(x, y, R, d['graph'])
             # wireless[(a - R):(a + R + 1), (b - R):(b + R + 1)] &= ~mask.astype(np.bool)
             # wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] -= kernel
             wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] = -1.0
