@@ -97,7 +97,8 @@ def plot_with_coverage(d, fpath=None, show=False):
     h = d['height']
     w = d['width']
     dpi = 100
-    fig.set_size_inches(10 * w / dpi, 10 * h / dpi)
+    pixel_per_cell = 3
+    fig.set_size_inches(pixel_per_cell * w / dpi, pixel_per_cell * h / dpi)
     ax.imshow(d['graph'], cmap=plt.cm.viridis, extent=(0, 1, 0, 1), aspect='auto', interpolation='none')
 
     routers = []
