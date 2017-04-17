@@ -27,27 +27,27 @@ If you have questions about the used algorithms (etc.) please feel free and ask,
 
 
 ## Scores
-Overall **526,721,382** points.
+Overall **538,713,178** points.
 
 Highest score during the _Final Round_ was 548,065,447 points (Team _AIM Tech_), and 550,156,575 points (Team _The Skyrmions_) in the _Extended round_.
 
 #### Charleston road
-_`21,955,024`_ points.
+_`21,962,354`_ points in `229.76s`.
 
 ![Charleston road](output/charleston_road.skel.png)
 
 #### Let's go higher
-_`289,844,262`_ points.
+_`290,106,787`_ points in `6488.64s`.
 
 ![Let's go higher](output/lets_go_higher.rand.png)
 
 #### Opera
-_`160,103,086`_ points.
+_`170,046,013`_ points in `2067.48s`.
 
 ![Opera](output/opera.conv.png)
 
 #### Rue de Londres
-_`54,819,010`_ points.
+_`56,598,024`_ points in `1399.57s`.
 
 ![Rue de Londres](output/rue_de_londres.conv.png)
 
