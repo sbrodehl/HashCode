@@ -8,6 +8,20 @@ import matplotlib.pyplot as plt
 from IO import Cell, read_dataset
 
 
+def chessboard_dist(a, b):
+    x1, y1 = a
+    x2, y2 = b
+    return np.max([np.abs(x1 - x2), np.abs(y1 - y2)])
+
+
+def quasi_euclidean_dist(a, b):
+    x1, y1 = a
+    x2, y2 = b
+    if np.abs(x1 - x2) > np.abs(y1 - y2):
+        return np.abs(x1 - x2) + (np.sqrt(2) - 1) * np.abs(y1 - y2)
+    return (np.sqrt(2) - 1) * np.abs(x1 - x2) + np.abs(y1 - y2)
+
+
 def compute_solution_score(d):
     # look for cables and routers, compute coverage and cost
     cables = []

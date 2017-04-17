@@ -2,6 +2,7 @@ from collections import deque
 import numpy as np
 import os
 
+
 class Cell:
     Backbone, Void, Wall, Wireless, Router, ConnectedRouter, Cable = range(-2, 5)
 
