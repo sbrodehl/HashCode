@@ -449,8 +449,12 @@ def find_chess_connection(a, b):
         path[i][i] = True
 
     # set remaining straight elements
-    for i in range(np.abs(dx - dy)):
-        path[-1][r[amin] + i] = True
+    if amin == 0:
+        for i in range(np.abs(dx - dy)):
+            path[-1][r[amin] + i] = True
+    elif amin == 1:
+        for i in range(np.abs(dx - dy)):
+            path[r[amin] + i][-1] = True
 
     if flipped:
         path = np.flipud(path)
@@ -501,6 +505,11 @@ def _place_mst_paths(d, routers, idx, idy, dists):
                         d['graph'][cable] = Cell.ConnectedRouter
                     else:
                         d['graph'][cable] = Cell.Cable
+
+    for router in routers:
+        if router == d['backbone']:
+            continue
+        d['graph'][router] = Cell.ConnectedRouter
 
     return d
 
