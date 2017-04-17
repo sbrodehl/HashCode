@@ -50,7 +50,7 @@ end = time.time()
 
 # output filepath magic
 fname, fext = os.path.splitext(args.output)
-meth_str = "." + args.method
+meth_str = "." + args.method + "." + args.cable
 # write solution
 write_solution(fname + meth_str + fext, d)
 
