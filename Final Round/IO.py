@@ -36,6 +36,7 @@ def read_dataset(fpath):
             'price_backbone': Pb,
             'price_router': Pr,
             'budget': B,
+            'original_budget': B,
             'backbone': backbone,
             'graph': matrix,
             'original': matrix.copy()

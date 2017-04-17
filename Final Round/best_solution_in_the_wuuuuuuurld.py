@@ -9,9 +9,10 @@ import glob
 
 from IO import *
 from Utilities import compute_solution_score, wireless_access
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree
 
-
-def place_routers_on_skeleton(d):
+def place_routers_on_skeleton(d, cmethod):
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
     # perform skeletonization
     skeleton = skeletonize(wireless)
@@ -48,7 +49,7 @@ def place_routers_on_skeleton(d):
 
     return d
 
-def place_routers_on_skeleton_iterative(d):
+def place_routers_on_skeleton_iterative(d, cmethod):
     budget = d['budget']
     R = d['radius']
     max_num_routers = int(d['budget'] / d['price_router'])
@@ -83,7 +84,7 @@ def place_routers_on_skeleton_iterative(d):
     return d
 
 
-def place_routers_randomized(d):
+def place_routers_randomized(d, cmethod):
     max_num_routers = int(d['budget'] / d['price_router'])
     wireless = np.where(d["graph"] == Cell.Wireless, 0, 1)
 
@@ -91,6 +92,9 @@ def place_routers_randomized(d):
     print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
     budget = d['budget']
     R = d['radius']
+
+    if cmethod == 'mst':
+        cost, succ, routers, idx, idy, dists = _mst(d, d['backbone'])
 
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
     for i in pbar:
@@ -104,26 +108,42 @@ def place_routers_randomized(d):
             return d
 
         # modify graph
-        d["graph"][x][y] = Cell.Router
-        d, ret, cost = _add_cabel(d, (x, y), budget)
+        if cmethod == 'bfs':
+            d["graph"][x][y] = Cell.Router
+            d, ret, cost = _add_cabel(d, (x, y), budget)
 
-        if ret:
-            budget -= cost
+            if ret:
+                budget -= cost
 
-            # refresh wireless map by removing new coverage
-            mask = wireless_access(x, y, d)
-            wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
-        else:
-            # no more budget left
-            pbar.close()
-            print("No budget available!")
-            return d
+                # refresh wireless map by removing new coverage
+                mask = wireless_access(x, y, d)
+                wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
+            else:
+                # no more budget left
+                pbar.close()
+                print("No budget available!")
+                return d
+        elif cmethod == 'mst':
+            tmp = d["graph"][x][y]
+            d["graph"][x][y] = Cell.Router
+            cost, succ, routers, idx, idy, dists = _mst(d, (x, y), routers, idx, idy, dists)
+
+            if succ and i < 10:
+                mask = wireless_access(x, y, d)
+                wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
+            else:
+                # reverse last router
+                d["graph"][x][y] = tmp
+                d = _place_mst_paths(d, routers, idx, idy, dists)
+                pbar.close()
+                print("No budget available!")
+                return d
 
     pbar.update(max_num_routers)
     return d
 
 
-def place_routers_by_convolution(d):
+def place_routers_by_convolution(d, cmethod):
     max_num_routers = int(d['budget'] / d['price_router'])
     # wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
     wireless = np.where(d["graph"] == Cell.Wireless, 1, -1).astype(np.float64)
@@ -193,7 +213,7 @@ def place_routers_by_convolution(d):
     return d
 
 
-def place_routers_randomized_by_score(d):
+def place_routers_randomized_by_score(d, cmethod):
     # some constants
     max_num_routers = int(d['budget'] / d['price_router'])
     budget = d['budget']
@@ -286,6 +306,76 @@ def place_routers_randomized_by_score(d):
     pbar.close()
     return d
 
+
+def _mst(d, new_router, routers=[], idx=[0], idy=[0], dists=[0]):
+
+    # add new router
+    routers.append(new_router)
+    last_i = len(routers) - 1
+
+    # calc new router dists
+    for i, a in enumerate(routers):
+        dist = np.abs(a[0] - new_router[0]) + np.abs(a[1] - new_router[1])
+        if dist > 0:
+            idx.append(i)
+            idy.append(last_i)
+            dists.append(dist)
+
+    # create matrix
+    mat = csr_matrix((dists, (idx, idy)), shape=(last_i + 1, last_i + 1))
+
+    # minimal spanning tree
+    Tmat = minimum_spanning_tree(mat)
+
+    # check costs
+    cost = np.sum(Tmat) * d['price_backbone'] + (len(routers) - 1) * d['price_router']
+    succ = cost < d['original_budget']
+
+    # return
+    return succ, cost, routers, idx, idy, dists
+
+def _place_mst_paths(d, routers, idx, idy, dists):
+    # calc mst
+    mat = csr_matrix((dists, (idx, idy)), shape=(len(routers), len(routers)))
+    Tmat = minimum_spanning_tree(mat).toarray()
+
+    # place cabels
+    for i, r in enumerate(Tmat):
+        for j, c in enumerate(r):
+            if Tmat[i, j] > 0:
+                router_from = routers[i]
+                router_to = routers[j]
+                # add cabel
+                x_min = np.min([router_from[0], router_to[0]])
+                x_max = np.max([router_from[0], router_to[0]])
+                y_min = np.min([router_from[1], router_to[1]])
+                y_max = np.max([router_from[1], router_to[1]])
+
+                xr = []
+                yr = []
+                if router_from[0] < router_to[0]:
+                    xr = range(router_from[0], router_to[0] + 1)
+                else:
+                    xr = range(router_from[0], router_to[0] - 1, -1)
+
+                if router_from[1] < router_to[1]:
+                    yr = range(router_from[1], router_to[1] + 1)
+                else:
+                    yr = range(router_from[1], router_to[1] - 1, -1)
+
+                for x1 in xr:
+                    if d['graph'][x1, router_from[1]] in [Cell.Wall, Cell.Wireless, Cell.Void]:
+                        d['graph'][x1, router_from[1]] = Cell.Cable
+                    if d['graph'][x1, router_from[1]] == Cell.Router:
+                        d['graph'][x1, router_from[1]] = Cell.ConnectedRouter
+
+                for y1 in yr:
+                    if d['graph'][router_to[0], y1] in [Cell.Wall, Cell.Wireless, Cell.Void]:
+                        d['graph'][router_to[0], y1] = Cell.Cable
+                    if d['graph'][router_to[0], y1] == Cell.Router:
+                        d['graph'][router_to[0], y1] = Cell.ConnectedRouter
+
+    return d
 
 def _add_cabel(d, new_router, remaining_budget):
     path = _bfs(d, new_router)
