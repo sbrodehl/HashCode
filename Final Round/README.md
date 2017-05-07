@@ -4,7 +4,7 @@ Solutions and code for the [Google \#Hash Code 2017 Challenge](https://hashcode.
 
 The problem statement can be found [here](hashcode2017_router_placement.pdf).
 
-The input files can be found in `input/`
+The input files can be found in [`input/`](input/)
 * [Charleston road](input/charleston_road.in)
 * [Let's go higher](input/lets_go_higher.in)
 * [Opera](input/opera.in)
@@ -27,29 +27,28 @@ If you have questions about the used algorithms (etc.) please feel free and ask,
 
 
 ## Scores
-Overall **538,713,178** points.
+Overall **539,090,345** points.
 
 Highest score during the _Final Round_ was 548,065,447 points (Team _AIM Tech_), and 550,156,575 points (Team _The Skyrmions_) in the _Extended round_.
 
 #### Charleston road
-_`21,962,354`_ points in `229.76s`.
-
-![Charleston road](output/charleston_road.skel.png)
+_`21,962,365`_ points in `376.92s`.
+![Charleston road](output/charleston_road.score.mst.png)
 
 #### Let's go higher
-_`290,106,787`_ points in `6488.64s`.
+_`290,118,862`_ points in `6488.64s`.
 
-![Let's go higher](output/lets_go_higher.rand.png)
+![Let's go higher](output/lets_go_higher.score.mst.png)
 
 #### Opera
 _`170,046,013`_ points in `2067.48s`.
 
-![Opera](output/opera.conv.png)
+![Opera](output/opera.score.bfs.png)
 
 #### Rue de Londres
-_`56,598,024`_ points in `1399.57s`.
+_`56,963,105`_ points in `1399.57s`.
 
-![Rue de Londres](output/rue_de_londres.conv.png)
+![Rue de Londres](output/rue_de_londres.score.mst.png)
 
 ## Authors
 
