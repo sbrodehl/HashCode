@@ -33,6 +33,7 @@ Highest score during the _Final Round_ was 548,065,447 points (Team _AIM Tech_),
 
 #### Charleston road
 _`21,962,365`_ points in `376.92s`.
+
 ![Charleston road](output/charleston_road.score.mst.png)
 
 #### Let's go higher
