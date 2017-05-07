@@ -8,6 +8,20 @@ import matplotlib.pyplot as plt
 from IO import Cell, read_dataset
 
 
+def chessboard_dist(a, b):
+    x1, y1 = a
+    x2, y2 = b
+    return np.max([np.abs(x1 - x2), np.abs(y1 - y2)])
+
+
+def quasi_euclidean_dist(a, b):
+    x1, y1 = a
+    x2, y2 = b
+    if np.abs(x1 - x2) > np.abs(y1 - y2):
+        return np.abs(x1 - x2) + (np.sqrt(2) - 1) * np.abs(y1 - y2)
+    return (np.sqrt(2) - 1) * np.abs(x1 - x2) + np.abs(y1 - y2)
+
+
 def compute_solution_score(d):
     # look for cables and routers, compute coverage and cost
     cables = []
@@ -83,7 +97,8 @@ def plot_with_coverage(d, fpath=None, show=False):
     h = d['height']
     w = d['width']
     dpi = 100
-    fig.set_size_inches(10 * w / dpi, 10 * h / dpi)
+    pixel_per_cell = 3
+    fig.set_size_inches(pixel_per_cell * w / dpi, pixel_per_cell * h / dpi)
     ax.imshow(d['graph'], cmap=plt.cm.viridis, extent=(0, 1, 0, 1), aspect='auto', interpolation='none')
 
     routers = []

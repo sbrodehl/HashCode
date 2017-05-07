@@ -11,10 +11,12 @@ import multiprocessing
 from multiprocessing import Pool
 from functools import partial
 from IO import *
-from Utilities import compute_solution_score, wireless_access
+from Utilities import compute_solution_score, wireless_access, quasi_euclidean_dist, chessboard_dist
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree
 
 
-def place_routers_on_skeleton(d):
+def place_routers_on_skeleton(d, cmethod):
     wireless = np.where(d["graph"] == Cell.Wireless, 1, 0)
     # perform skeletonization
     skeleton = skeletonize(wireless)
@@ -52,7 +54,7 @@ def place_routers_on_skeleton(d):
     return d
 
 
-def place_routers_on_skeleton_iterative(d):
+def place_routers_on_skeleton_iterative(d, cmethod):
     budget = d['budget']
     R = d['radius']
     max_num_routers = int(d['budget'] / d['price_router'])
@@ -87,7 +89,7 @@ def place_routers_on_skeleton_iterative(d):
     return d
 
 
-def place_routers_randomized(d):
+def place_routers_randomized(d, cmethod):
     max_num_routers = int(d['budget'] / d['price_router'])
     wireless = np.where(d["graph"] == Cell.Wireless, 0, 1)
 
@@ -95,6 +97,9 @@ def place_routers_randomized(d):
     print(" budget:   %d" % int(int(d['budget'] / d['price_router'])))
     budget = d['budget']
     R = d['radius']
+
+    if cmethod == 'mst':
+        cost, succ, routers, idx, idy, dists = _mst(d, d['backbone'])
 
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
     for i in pbar:
@@ -108,20 +113,36 @@ def place_routers_randomized(d):
             return d
 
         # modify graph
-        d["graph"][x][y] = Cell.Router
-        d, ret, cost = _add_cabel(d, (x, y), budget)
+        if cmethod == 'bfs':
+            d["graph"][x][y] = Cell.Router
+            d, ret, cost = _add_cabel(d, (x, y), budget)
 
-        if ret:
-            budget -= cost
+            if ret:
+                budget -= cost
 
-            # refresh wireless map by removing new coverage
-            mask = wireless_access(x, y, R, d['graph'])
-            wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
-        else:
-            # no more budget left
-            pbar.close()
-            print("No budget available!")
-            return d
+                # refresh wireless map by removing new coverage
+                mask = wireless_access(x, y, R, d['graph'])
+                wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
+            else:
+                # no more budget left
+                pbar.close()
+                print("No budget available!")
+                return d
+        elif cmethod == 'mst':
+            tmp = d["graph"][x][y]
+            d["graph"][x][y] = Cell.Router
+            cost, succ, routers, idx, idy, dists = _mst(d, (x, y), routers, idx, idy, dists)
+
+            if succ and i < 10:
+                mask = wireless_access(x, y, R, d['graph'])
+                wireless[(x - R):(x + R + 1), (y - R):(y + R + 1)] |= mask.astype(np.bool)
+            else:
+                # reverse last router
+                d["graph"][x][y] = tmp
+                d = _place_mst_paths(d, routers, idx, idy, dists)
+                pbar.close()
+                print("No budget available!")
+                return d
 
     pbar.update(max_num_routers)
     return d
@@ -151,7 +172,7 @@ def _parallel_counting_helper(position, radius, graph, scoring, offset=(0, 0)):
     return a, b, np.sum(np.multiply(scoring[wx_min:wx_max, wy_min:wy_max], np.nan_to_num(mask[dx:dx + lx, dy:dy + ly])))
 
 
-def place_routers_randomized_by_score(d):
+def place_routers_randomized_by_score(d, cmethod):
     # some constants
     max_num_routers = int(d['budget'] / d['price_router'])
     budget = d['budget']
@@ -215,6 +236,11 @@ def place_routers_randomized_by_score(d):
         # save coverage to disk
         pickle.dump(counting, bz2.BZ2File('output/' + facc, 'w'), pickle.HIGHEST_PROTOCOL)
 
+    routers = []
+    idx, idy, dists = [], [], []
+    if cmethod == 'mst':
+        placed, cost, routers, idx, idy, dists = _mst(d, d['backbone'])
+
     # choose routers by score and place them!
     pbar = tqdm(range(max_num_routers), desc="Placing Routers")
     while budget > 0:
@@ -237,9 +263,22 @@ def place_routers_randomized_by_score(d):
 
         x, y = placement
 
-        # modify graph, add router and cables
-        d["graph"][x][y] = Cell.Router
-        d, placed, cost = _add_cabel(d, (x, y), budget)
+        cost = 0
+        placed = False
+        if cmethod == 'mst':
+            tmp = d["graph"][x][y]
+            d["graph"][x][y] = Cell.Router
+            placed, nbud, routers, idx, idy, dists = _mst(d, (x, y), routers, idx, idy, dists)
+            budget = d['budget'] - nbud
+            if not placed:
+                d["graph"][x][y] = tmp
+                routers = routers[:-1]
+                idx, idy, dists = idx[:-len(routers)], idy[:-len(routers)], dists[:-len(routers)]
+        else:
+            # bfs as default
+            # modify graph, add router and cables
+            d["graph"][x][y] = Cell.Router
+            d, placed, cost = _add_cabel(d, (x, y), budget)
 
         # check if new path is not to expensive
         if not placed:
@@ -284,11 +323,15 @@ def place_routers_randomized_by_score(d):
 
         counting = np.multiply(counting, wireless)
 
+    # budget looks good, place all cables
+    if cmethod == 'mst':
+        d = _place_mst_paths(d, routers, idx, idy, dists)
+
     pbar.close()
     return d
 
 
-def place_routers_by_convolution(d):
+def place_routers_by_convolution(d, cmethod):
     max_num_routers = int(d['budget'] / d['price_router'])
     # wireless = np.where(d["graph"] == Cell.Wireless, 1, 0).astype(np.float64)
     wireless = np.where(d["graph"] == Cell.Wireless, 1, -1).astype(np.float64)
@@ -355,6 +398,119 @@ def place_routers_by_convolution(d):
             return d
 
     pbar.close()
+    return d
+
+
+def _mst(d, new_router, routers=[], idx=[], idy=[], dists=[]):
+
+    new_id = len(routers)
+
+    # calc new router dists
+    for i, a in enumerate(routers):
+        dist = chessboard_dist(a, new_router)
+        if dist > 0:
+            idx.append(i)
+            idy.append(new_id)
+            dists.append(dist)
+
+    # add new router
+    routers.append(new_router)
+    # create matrix
+    mat = csr_matrix((dists, (idx, idy)), shape=(len(routers), len(routers)))
+
+    # minimal spanning tree
+    Tmat = minimum_spanning_tree(mat)
+
+    # check costs
+    cost = np.sum(Tmat) * d['price_backbone'] + (len(routers) - 1) * d['price_router']
+    succ = cost <= d['original_budget']
+
+    # return
+    return succ, cost, routers, idx, idy, dists
+
+
+def find_chess_connection(a, b):
+    cables = []
+    dx, dy = np.abs(a[0] - b[0]) + 1, np.abs(a[1] - b[1]) + 1
+    xmin, ymin = np.min([a[0], b[0]]), np.min([a[1], b[1]])
+    path = np.zeros((dx, dy), dtype=np.bool)
+    path[a[0] - xmin][a[1] - ymin] = True
+    path[b[0] - xmin][b[1] - ymin] = True
+    r = [dx, dy]
+    amin = np.argmin(r)
+
+    flipped = False
+    if not path[0][0]:
+        path = np.flipud(path)
+        flipped = True
+
+    # set diagonal elements
+    for i in range(r[amin]):
+        path[i][i] = True
+
+    # set remaining straight elements
+    if amin == 0:
+        for i in range(np.abs(dx - dy)):
+            path[-1][r[amin] + i] = True
+    elif amin == 1:
+        for i in range(np.abs(dx - dy)):
+            path[r[amin] + i][-1] = True
+
+    if flipped:
+        path = np.flipud(path)
+
+    # select cables
+    for i, row in enumerate(path):
+        for j, col in enumerate(row):
+            if path[i][j]:
+                cables.append((i + xmin, j + ymin))
+    return cables
+
+
+def find_connection(router_from, router_to):
+    cables = []
+    if router_from[0] < router_to[0]:
+        xr = range(router_from[0], router_to[0] + 1)
+    else:
+        xr = range(router_from[0], router_to[0] - 1, -1)
+
+    if router_from[1] < router_to[1]:
+        yr = range(router_from[1], router_to[1] + 1)
+    else:
+        yr = range(router_from[1], router_to[1] - 1, -1)
+
+    for x1 in xr:
+        cables.append((x1, router_from[1]))
+
+    for y1 in yr:
+        cables.append((router_to[0], y1))
+
+    return cables
+
+
+def _place_mst_paths(d, routers, idx, idy, dists):
+    # calc mst
+    mat = csr_matrix((dists, (idx, idy)), shape=(len(routers), len(routers)))
+    Tmat = minimum_spanning_tree(mat).toarray()
+
+    # place cabels
+    for i, r in enumerate(Tmat):
+        for j, c in enumerate(r):
+            if Tmat[i, j] > 0:
+                cables = find_chess_connection(routers[i], routers[j])
+                for cable in cables:
+                    if cable == d['backbone']:
+                        continue
+                    if d['graph'][cable] == Cell.Router:
+                        d['graph'][cable] = Cell.ConnectedRouter
+                    else:
+                        d['graph'][cable] = Cell.Cable
+
+    for router in routers:
+        if router == d['backbone']:
+            continue
+        d['graph'][router] = Cell.ConnectedRouter
+
     return d
 
 
